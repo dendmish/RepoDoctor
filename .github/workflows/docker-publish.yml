@@ -16,6 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fetch buildx plugin for the app image
+        run: |-
+          mkdir -p cli-plugins
+          curl -fsSL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-amd64" \
+            -o cli-plugins/docker-buildx
+          chmod +x cli-plugins/docker-buildx
+
       - name: Set lower-case image name
         id: img
         run: echo "name=ghcr.io/$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"

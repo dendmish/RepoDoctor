@@ -86,12 +86,21 @@ def make_dockerfile(a: RepoAnalysis) -> tuple[str, str]:
         )
         return dockerfile, cmd
     cmd = _pick_cmd(a, default="python main.py")
+    torch_pkgs = [d.split()[0] for d in a.dependencies
+                  if d.split()[0].split(":", 1)[-1].lower().split("[")[0] in
+                  ("torch", "torchvision", "torchaudio")]
+    torch_first = ""
+    if torch_pkgs:
+        pkgs = " ".join(dict.fromkeys(torch_pkgs))
+        torch_first = ("RUN pip install --no-cache-dir " + pkgs +
+                       " --index-url https://download.pytorch.org/whl/cpu || true\n")
     install = "RUN pip install --no-cache-dir -r requirements.txt || true" if a.has_requirements else ""
     dockerfile = (
         f"FROM {PYTHON_IMAGE}\n"
         "ENV PYTHONUNBUFFERED=1\n"
         "WORKDIR /app\n"
         "RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git build-essential || true\n"
+        f"{torch_first}"
         f"{install}\n"
         "COPY . .\n"
         f"CMD {cmd}\n"
@@ -105,8 +114,12 @@ def _pick_cmd(a: RepoAnalysis, default: str) -> str:
         c = entry["cmd"] if isinstance(entry, dict) else entry
         c = c.strip()
         if c.startswith("python ") and "pip" not in c[:8]:
-            script = c.split(maxsplit=1)[-1].split()[0]
-            return _cmd_json(["python", script])
+            args = c.split()
+            if len(args) >= 2 and args[1].endswith(".py") and "/" not in args[1]:
+                return _cmd_json(["python", args[1]])
+            if len(args) >= 3 and args[1] == "-m" and args[2].endswith(".py"):
+                return _cmd_json(["python", "-m", args[2]])
+            continue
         if re.match(r"^\./[\w.\-]+\.py(\s|$)?", c):
             script = c.split()[0].lstrip("./")
             return _cmd_json(["python", script])

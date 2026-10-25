@@ -6,3 +6,4 @@ logs/
 backend/.venv/
 node_modules/
 _sandbox/
+cli-plugins/

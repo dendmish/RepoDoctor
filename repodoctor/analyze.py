@@ -231,18 +231,17 @@ def _entry_points_from_readme(readme: str, path: str) -> list[EntryCmd]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
+            if line.startswith("$"):
+                line = line.lstrip("$ ").strip()
+            cwd = os.path.basename(path)
+            if line.startswith("cd ") or line.startswith("git") or len(line) > 160:
+                continue
             if lang == "python":
-                if line.startswith(">>>") or len(line) > 300:
-                    continue
-                hits.append({"cmd": line, "source": "README (python)"})
-            else:
-                if line.startswith("$"):
-                    line = line.lstrip("$ ").strip()
-                cwd = os.path.basename(path)
-                if line.startswith("cd ") or line.startswith("git"):
-                    continue
-                if line.startswith("python ") or line.startswith("pip ") or line.startswith("./"):
-                    hits.append({"cmd": line, "source": "README"})
+                if line.startswith("python ") and " " not in line[7:]:
+                    hits.append({"cmd": line, "source": "README (python)"})
+                continue
+            if line.startswith("python ") or line.startswith("pip ") or line.startswith("./"):
+                hits.append({"cmd": line, "source": "README"})
     return hits[:15]
 
 

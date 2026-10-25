@@ -25,6 +25,8 @@ COPY prompts/ ./prompts/
 COPY examples/ ./examples/
 
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+COPY cli-plugins/docker-buildx /root/.docker/cli-plugins/docker-buildx
+RUN chmod +x /root/.docker/cli-plugins/docker-buildx
 
 EXPOSE 8501
 
