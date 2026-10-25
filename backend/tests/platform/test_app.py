@@ -53,9 +53,14 @@ def test_health_never_exposes_keys(test_settings: Settings) -> None:
     assert "SECRET123" not in repr(settings)
 
 
-def test_unwired_pipeline_returns_safe_500(client: TestClient) -> None:
-    response = client.post("/api/v1/analyses", json=load_example("request_analysis.json"))
-    _assert_error(response, 500, "INTERNAL_ERROR")
+def test_default_pipeline_returns_real_fixture_analysis(client: TestClient) -> None:
+    payload = {**load_example("request_analysis.json"), "use_ai": False}
+    response = client.post("/api/v1/analyses", json=payload)
+    assert response.status_code == 201
+    analysis = AnalysisResponse.model_validate(response.json())
+    assert analysis.generation.mode == "fallback"
+    assert analysis.facts.dependencies
+    assert not any("DEV STUB" in warning for warning in analysis.warnings)
 
 
 def test_validation_error_envelope_hides_input(client: TestClient) -> None:

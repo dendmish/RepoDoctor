@@ -1,5 +1,59 @@
 # Handoff — агент 3 (AI / Diagnostics)
 
+## C4 · Волна 2 — выполнено в ветке feat/c4-a3-hardening-wiring, 25.10.2026
+
+База: `d04094c` (main с C2/C3 и B2–B4). Контракт 1.0 и зависимости не изменены.
+Изменения: `intelligence/{context,validation}.py`, `tests/intelligence/test_adversarial.py`,
+`fixtures/intelligence/adversarial/*`, `fixtures/intelligence/QUALITY_REVIEW.md`.
+Следующий этап агента 3 — C5 после G2 и доступа к модели; A3 выполнен далее в той же
+ветке по прямому запросу пользователя, handoff — в `agent_1.md`.
+
+- Corpus покрывает hostile README/log, invented evidence, curl pipe shell, wrong
+  shell, bogus app.py, чрезмерное число steps, partial/incomplete JSON, пустую diagnosis,
+  конфликт runtime facts, ложные execution claims, dangerous prose и секрет в output.
+- Новые regressions воспроизвели шесть ранее принимавшихся недопустимых текстов.
+  Validator теперь отклоняет конкретные формы «проверен/исправлен/запущен», секреты,
+  опасные команды в пояснениях, выдуманные runtime/file claims. Expected verification,
+  явные assumptions/questions и отрицания не выдаются за выполненные действия.
+- Whole fallback сохраняет static evidence/findings. Команды по-прежнему допускаются
+  только из подтверждённого baseline/diagnostic allowlist, requires_review=true.
+- Context packer учитывает все поля до упаковки и сохраняет evidence baseline как
+  обязательную часть. Если обязательный контекст не помещается, context_too_large
+  возвращается **до** создания клиента; необязательные facts/excerpts сокращаются
+  атомарно с evidence и явным limitations/truncated.
+- Через настоящий SDK на MockTransport проверены отсутствие tools и секретов Settings
+  в request body, отделение hostile данных от instructions, отсутствие дополнительных
+  network/subprocess действий. Также проверены partial JSON, output budget=1,
+  missing key/model по отдельности, disabled AI, timeout/cancellation и retries=0
+  (часть последних проверок сохранена из C2/C3).
+- Rubric 0/1/2 × пять критериев, максимум 10, и ручной review шести plan/diagnosis —
+  [QUALITY_REVIEW.md](../../fixtures/intelligence/QUALITY_REVIEW.md). Оценки 8–10;
+  на выбранных fixtures ноль отсутствующих evidence, запрещённых commands и
+  необоснованных execution claims. Verification описывает ожидаемые результаты.
+
+Проверки из `backend`:
+
+```powershell
+.venv/Scripts/python.exe -m pytest tests/intelligence -q
+# 183 passed.
+.venv/Scripts/python.exe -m pytest -q
+# 503 passed после A3 (31 tests/platform/test_wiring.py).
+.venv/Scripts/ruff.exe check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# All checks passed!
+.venv/Scripts/ruff.exe format --check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# 72 files already formatted.
+```
+
+Для UI: mode/reason/warnings остаются обязательными; fallback не означает исправление
+или успешный запуск. Ошибочный AI output не требует retry/repair loop. Источники лога
+по-прежнему относятся к полному обработанному тексту.
+
+Ограничения: конечный набор шаблонов prose не доказывает истинность всех парафраз и
+может отвергнуть допустимую формулировку. Prompt не является абсолютной защитой от
+injection; технические границы — отсутствие tools/исполнения, fixed endpoint,
+bounded budgets и подтверждённые команды. Live OpenAI/качество конкретной модели,
+реальное выполнение пользовательских commands и полный browser G1 не проверялись.
+
 ## C2/C3 · Волна 2 — выполнено в ветке 25.10.2026
 
 База: `0f1a237` (main с B2–B4), контракт 1.0 без изменений. Обе задачи реализованы

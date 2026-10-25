@@ -19,6 +19,7 @@ from repodoctor.contracts.api import (
 from repodoctor.contracts.domain import AnalysisContext, StaticAnalysis
 from repodoctor.intelligence.provider import ModelDiagnosisOutput, ModelPlanOutput
 from repodoctor.intelligence.rules import build_fallback_plan
+from repodoctor.security.redaction import redact_text
 
 
 class OutputRejected(ValueError):
@@ -33,6 +34,63 @@ _DANGEROUS = re.compile(
     r"(?:/etc/|/usr/|[A-Z]:\\Windows\\)|[<>]|\$\(|`|\r|\n|&&|\|\||;",
     re.IGNORECASE,
 )
+_EXECUTED = re.compile(
+    r"\b(?:исправлен[аоы]?|проверен[аоы]?|запущен[аоы]?|выполнен[аоы]?|"
+    r"verified|fixed|executed)\b",
+    re.I,
+)
+_PROSE_COMMAND = re.compile(
+    r"\b(?:curl|wget|iwr|invoke-webrequest)\b[^\n]*\|\s*(?:bash|sh|zsh|iex)|"
+    r"\b(?:sudo\s+|rm\s+-[a-z]*[rf]|rmdir\s+/s|del\s+/s|"
+    r"remove-item\s+[^\n]*-recurse|set-executionpolicy\s+)",
+    re.I,
+)
+
+
+def _content(data: object, scan: StaticAnalysis, field: str = "") -> None:
+    """Reject concrete unsupported claims; this deliberately does not prove prose true."""
+    if isinstance(data, list):
+        for item in data:
+            _content(item, scan, field)
+    elif isinstance(data, dict):
+        for name, item in data.items():
+            _content(item, scan, name)
+    elif isinstance(data, str):
+        if redact_text(data)[0] != data:
+            raise OutputRejected("secret_in_output")
+        if _PROSE_COMMAND.search(data):
+            raise OutputRejected("dangerous_prose")
+        # Verification describes an expected outcome; assumptions/questions preserve uncertainty.
+        if field in {"verification", "assumptions", "questions", "text"}:
+            return
+        for claim in _EXECUTED.finditer(data):
+            if not re.search(
+                r"\b(?:не|not|never)\s+(?:(?:был[аои]?|были)\s+)?$", data[: claim.start()], re.I
+            ):
+                raise OutputRejected("unsupported_execution_claim")
+        for runtime, version in re.findall(
+            r"\b(python|node(?:\.js)?)\s*(?:версии?\s*)?[:=<>~^ ]*"
+            r"(\d+(?:\.\d+){0,2})",
+            data,
+            re.I,
+        ):
+            ecosystem = "node" if runtime.lower().startswith("node") else "python"
+            known = [
+                hint.constraint
+                for hint in scan.facts.runtime_hints
+                if hint.runtime.value == ecosystem
+            ]
+            if not any(
+                re.search(rf"(?<!\d){re.escape(version)}(?!\d)", constraint) for constraint in known
+            ):
+                raise OutputRejected("unsupported_runtime_claim")
+        paths = {ev.path for ev in scan.evidence if ev.path} | {
+            file.path for file in scan.selected_files
+        }
+        names = paths | {path.rsplit("/", 1)[-1] for path in paths}
+        for path in re.findall(r"[\w./-]+\.(?:py|js|mjs|cjs|ts)\b", data):
+            if path.lower() != "node.js" and path.removeprefix("./") not in names:
+                raise OutputRejected("unsupported_entrypoint_claim")
 
 
 def command_allowed(text: str) -> bool:
@@ -106,6 +164,7 @@ def validate_plan(
     # Reparse even typed providers: model_copy(update=...) bypasses Pydantic validation.
     result = ModelPlanOutput.model_validate(output.model_dump())
     _bounded(result.model_dump())
+    _content(result.model_dump(), scan)
     _links(result.model_dump(), scan)
     _steps(result.run_plan.steps, scan.evidence, target)
     baseline = build_fallback_plan(scan, target)
@@ -159,6 +218,7 @@ def validate_diagnosis(
 
     result = ModelDiagnosisOutput.model_validate(output.model_dump())
     _bounded(result.model_dump())
+    _content(result.model_dump(), context.scan)
     _links(result.model_dump(), context.scan)
     if len(result.causes) > 5 or (not result.causes and not result.questions):
         raise OutputRejected("causes")
