@@ -1,0 +1,71 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "unknown-stack-demo",
+    "url": "https://github.com/repodoctor-fixtures/unknown-stack-demo",
+    "default_branch": "main",
+    "resolved_commit": "235e646f4229385d01780692cd63542e7539f259",
+    "description": "SYNTHETIC fixture: нет README, manifest и известной точки входа"
+  },
+  "source_mode": "fixture",
+  "facts": {
+    "stack": "unknown",
+    "project_roots": [],
+    "dependencies": [],
+    "runtime_hints": [],
+    "package_managers": [],
+    "entrypoints": [],
+    "env_var_names": [],
+    "data_hints": [],
+    "gpu_hints": []
+  },
+  "findings": [
+    {
+      "id": "finding_7a602c4b9ea13255e819",
+      "rule_id": "ENTRYPOINT_UNCLEAR",
+      "title": "ENTRYPOINT UNCLEAR",
+      "description": "Стек и точка входа не определены.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Укажите manifest и команду запуска проекта."
+    },
+    {
+      "id": "finding_b28e909455a0894e0ed4",
+      "rule_id": "README_MISSING",
+      "title": "README MISSING",
+      "description": "В наблюдаемом полном дереве нет корневого README.",
+      "severity": "warning",
+      "confidence": "high",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Уточните workflow запуска у автора проекта."
+    }
+  ],
+  "evidence": [],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 2,
+    "files_selected": 2,
+    "files_read": 2,
+    "bytes_read": 140,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  },
+  "selected_files": [
+    {
+      "path": "LICENSE",
+      "content": "Synthetic fixture authored for RepoDoctor testing.\n",
+      "size_bytes": 51,
+      "sha": "ed7324d5708d056c653bc7cebc4c4684aee048c2"
+    },
+    {
+      "path": "notes.txt",
+      "content": "Synthetic unsupported project.\nNo runtime, dependency manager or entrypoint is declared.\n",
+      "size_bytes": 89,
+      "sha": "a917b8567336127f097a6fc059d344ef52022ba8"
+    }
+  ]
+}

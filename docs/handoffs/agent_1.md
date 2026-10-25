@@ -87,3 +87,51 @@ uv run python -m repodoctor.export_openapi ../contracts/openapi.json
 - Ещё нет: ограничения размера body (413), limiter (429 SERVER_BUSY), deadlines, redaction, общего AsyncClient. Всё это входит в A2.
 - Без подключённых сервисов и без stubs анализ и диагностика отвечают 500 INTERNAL_ERROR.
 - Особенность окружения: путь проекта содержит кириллицу, поэтому editable-установка работает через `editables` (D-003).
+
+## A2 — API, lifecycle, memory store и ограничения
+
+```text
+Задача: A2
+Статус: done (ветка agent-1-platform, PR в main)
+Базовый контракт: schema_version 1.0, тег g0; контракт и openapi.json не менялись
+Файлы: backend/src/repodoctor/services/{analysis,diagnosis,store}.py,
+       backend/src/repodoctor/security/{redaction,limits}.py,
+       backend/src/repodoctor/observability.py, backend/src/repodoctor/main.py,
+       backend/tests/platform/{fakes,test_redaction,test_store_limits,test_services}.py,
+       docs/decisions.md (D-012…D-015)
+Реализовано:
+  - AnalysisService: слот → fetch → scan (to_thread) → build_plan → сборка ответа
+    (UUID4, UTC, schema 1.0, dedupe evidence/findings) → store.put; deadline 85 s → 504.
+  - DiagnosisService: store.get (404 ANALYSIS_NOT_FOUND) → sanitize_log + redact command →
+    intelligence.diagnose; deadline 45 s → 504; сырой лог не сохраняется и не логируется.
+  - MemoryAnalysisStore: OrderedDict, TTL 1800 s по monotonic, LRU, 30 записей,
+    512 KiB на контекст, purge при put/get; внедряемые clock/id factories.
+  - OperationLimiter: 2 слота на анализ и диагностику, fail-fast 429 SERVER_BUSY,
+    освобождение в finally (ошибка, таймаут, отмена).
+  - BodyLimitMiddleware: 128 KiB, включая chunked; дочитывание до 1 MiB для честного 413.
+  - redact_text / sanitize_log: auth headers, bearer, GitHub/OpenAI/AWS/Slack/Google/JWT
+    токены, credential URL, private key blocks, NAME_SECRET=value; число строк сохраняется.
+  - RequestContextMiddleware: request_id, X-Request-ID, структурный лог запроса.
+  - Lifespan: общий httpx.AsyncClient для GitHub; CORS только в development.
+Проверки (Windows, CPython 3.12.3):
+  uv run ruff check .          → All checks passed
+  uv run ruff format --check . → OK
+  uv run pytest -q             → 116 passed (3 прогона подряд, стабильно)
+  export_openapi               → без diff (контракт не менялся)
+  uvicorn smoke                → health 200 + X-Request-ID; 200 KB body → 413 JSON;
+                                 битый JSON → 422; лог содержит только id/method/path/status/ms
+Не проверено: Linux/macOS; настоящие модули агентов 2/3 (будут подключены в A3).
+Изменения контракта/зависимостей: нет.
+Разблокирует: A3 (после B4 и C4).
+Блокер: нет.
+Следующая задача: A3 — подключение модулей и G1.
+```
+
+### Для агентов 2 и 3
+
+- **Redaction:** `from repodoctor.security.redaction import redact_text, sanitize_log`.
+  - `redact_text(text) -> (masked, count)` — чистая функция, число строк сохраняется. Агент 2 применяет её к содержимому `TextFile` до передачи дальше.
+  - Агент 3 получает лог уже очищенным (`SanitizedLog`) и сам sanitizer не дублирует.
+- **Подключение:** `create_app(settings, source=..., analyzer=..., intelligence=...)` — больше ничего не нужно, store и limiter создаются автоматически. Общий GitHub-клиент доступен как `app.state.github_client` после старта lifespan.
+- **Исключения:** модули бросают доменные ошибки (`contracts/domain.py`). Любое другое исключение превращается в 500 INTERNAL_ERROR без деталей.
+- **Тесты:** тестовые двойники лежат в `backend/tests/platform/fakes.py`. Их можно взять за образец, но не импортировать из чужих тестовых пакетов.

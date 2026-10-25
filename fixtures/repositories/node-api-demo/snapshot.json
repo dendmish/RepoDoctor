@@ -1,0 +1,97 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "node-api-demo",
+    "url": "https://github.com/repodoctor-fixtures/node-api-demo",
+    "default_branch": "main",
+    "resolved_commit": "164c8e39ea5b6b26c9a5423372a7e8d6392f2533",
+    "description": "SYNTHETIC fixture: npm API со scripts, engines и lock-файлом"
+  },
+  "source_mode": "fixture",
+  "tree": [
+    {
+      "path": ".nvmrc",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "1d9b7831ba9d90866e21ce7154fbb84cc448ef60",
+      "size": 8
+    },
+    {
+      "path": "package-lock.json",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "04e19ec1ba92607eac1e971bf9414a712ea9574a",
+      "size": 255
+    },
+    {
+      "path": "package.json",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "5a223de82ea1f7acb3e517eea433a1d77d9d17a4",
+      "size": 271
+    },
+    {
+      "path": "README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "862b1f3a14f441a7903b65b706fb89a36842c4c6",
+      "size": 128
+    },
+    {
+      "path": "src",
+      "type": "tree",
+      "mode": "040000",
+      "sha": "5e1c6322476cbc5fbc5183124924f10506d4f672",
+      "size": null
+    },
+    {
+      "path": "src/server.js",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "46f750438f59f4d94aec796f5da241f7282cfb30",
+      "size": 169
+    }
+  ],
+  "files": [
+    {
+      "path": ".nvmrc",
+      "content": "22.12.0\n",
+      "size_bytes": 8,
+      "sha": "1d9b7831ba9d90866e21ce7154fbb84cc448ef60"
+    },
+    {
+      "path": "package-lock.json",
+      "content": "{\n  \"name\": \"synthetic-node-api\",\n  \"version\": \"1.0.0\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"synthetic-node-api\",\n      \"version\": \"1.0.0\",\n      \"engines\": {\n        \"node\": \">=22.12.0\"\n      }\n    }\n  }\n}\n",
+      "size_bytes": 255,
+      "sha": "04e19ec1ba92607eac1e971bf9414a712ea9574a"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"synthetic-node-api\",\n  \"private\": true,\n  \"version\": \"1.0.0\",\n  \"packageManager\": \"npm@10.9.0\",\n  \"engines\": {\n    \"node\": \">=22.12.0\"\n  },\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"dev\": \"node --watch src/server.js\"\n  },\n  \"dependencies\": {}\n}\n",
+      "size_bytes": 271,
+      "sha": "5a223de82ea1f7acb3e517eea433a1d77d9d17a4"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic Node API\n\nLocal offline fixture.\n\n## Setup\nNode.js >=22.12.0 and npm are required.\n```bash\nnpm ci\nnpm run start\n```\n",
+      "size_bytes": 128,
+      "sha": "862b1f3a14f441a7903b65b706fb89a36842c4c6"
+    },
+    {
+      "path": "src/server.js",
+      "content": "// Synthetic source text. RepoDoctor never executes it.\nimport { createServer } from \"node:http\";\ncreateServer((req, res) => res.end(\"synthetic fixture\")).listen(3000);\n",
+      "size_bytes": 169,
+      "sha": "46f750438f59f4d94aec796f5da241f7282cfb30"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 6,
+    "files_selected": 5,
+    "files_read": 5,
+    "bytes_read": 831,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  }
+}

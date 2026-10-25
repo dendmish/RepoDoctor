@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "repositories": [
+    {
+      "id": "python-cli-demo",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo",
+      "snapshot": "python-cli-demo/snapshot.json",
+      "refs": [
+        "main",
+        "feature/offline-demo"
+      ],
+      "expected": {
+        "stack": "python",
+        "manifests": [
+          "requirements.txt"
+        ],
+        "dependencies": [
+          "requests",
+          "python-dotenv",
+          "rich"
+        ],
+        "env_var_names": [
+          "DEMO_API_TOKEN"
+        ],
+        "data_paths": [
+          "data/input.csv"
+        ],
+        "entrypoints": [
+          "python -m demo_cli"
+        ],
+        "absent_paths": [
+          "data/input.csv"
+        ]
+      }
+    },
+    {
+      "id": "node-api-demo",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo",
+      "snapshot": "node-api-demo/snapshot.json",
+      "refs": [
+        "main"
+      ],
+      "expected": {
+        "stack": "node",
+        "manifests": [
+          "package.json"
+        ],
+        "package_manager": "npm",
+        "lock_paths": [
+          "package-lock.json"
+        ],
+        "runtime": ">=22.12.0",
+        "entrypoints": [
+          "npm run start",
+          "npm run dev"
+        ]
+      }
+    },
+    {
+      "id": "ml-experiments-demo",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo",
+      "snapshot": "ml-experiments-demo/snapshot.json",
+      "refs": [
+        "main"
+      ],
+      "expected": {
+        "stack": "mixed",
+        "project_roots": [
+          "backend",
+          "frontend"
+        ],
+        "manifests": [
+          "backend/pyproject.toml",
+          "frontend/package.json"
+        ],
+        "dependencies": [
+          "fastapi",
+          "vite"
+        ],
+        "ambiguous_root": true
+      }
+    },
+    {
+      "id": "malformed-manifest-demo",
+      "url": "https://github.com/repodoctor-fixtures/malformed-manifest-demo",
+      "snapshot": "malformed-manifest-demo/snapshot.json",
+      "refs": [
+        "main"
+      ],
+      "expected": {
+        "malformed_paths": [
+          "package.json",
+          "pyproject.toml"
+        ],
+        "expected_rule_ids": [
+          "MANIFEST_PARSE_FAILED"
+        ],
+        "entrypoints": []
+      }
+    },
+    {
+      "id": "unknown-stack-demo",
+      "url": "https://github.com/repodoctor-fixtures/unknown-stack-demo",
+      "snapshot": "unknown-stack-demo/snapshot.json",
+      "refs": [
+        "main"
+      ],
+      "expected": {
+        "stack": "unknown",
+        "manifests": [],
+        "absent_paths": [
+          "README.md"
+        ],
+        "expected_rule_ids": [
+          "README_MISSING",
+          "ENTRYPOINT_UNCLEAR"
+        ],
+        "entrypoints": []
+      }
+    },
+    {
+      "id": "partial-tree-demo",
+      "url": "https://github.com/repodoctor-fixtures/partial-tree-demo",
+      "snapshot": "partial-tree-demo/snapshot.json",
+      "refs": [
+        "main"
+      ],
+      "expected": {
+        "stack": "python",
+        "dependencies": [
+          "torch"
+        ],
+        "data_paths": [
+          "data/training.csv",
+          "checkpoints/model.bin"
+        ],
+        "expected_rule_ids": [
+          "PARTIAL_COVERAGE",
+          "EXTERNAL_DATA_REFERENCED",
+          "GPU_REQUIREMENT_UNCLEAR"
+        ],
+        "absence_is_not_proven": true
+      }
+    }
+  ]
+}

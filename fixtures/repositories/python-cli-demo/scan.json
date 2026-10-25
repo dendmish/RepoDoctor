@@ -1,0 +1,263 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "python-cli-demo",
+    "url": "https://github.com/repodoctor-fixtures/python-cli-demo",
+    "default_branch": "main",
+    "resolved_commit": "b455d8a356006d38aec3ccd1552aa5a1728aa65b",
+    "description": "SYNTHETIC fixture: Python CLI с внешним CSV и настройкой окружения"
+  },
+  "source_mode": "fixture",
+  "facts": {
+    "stack": "python",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "python",
+        "manifest_paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "requests",
+        "constraint": "==2.32.3",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": [
+          "file_accc0b79bc2facb17aab"
+        ]
+      },
+      {
+        "name": "python-dotenv",
+        "constraint": ">=1.0",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": [
+          "file_015ab934dc84c8d8b77c"
+        ]
+      },
+      {
+        "name": "rich",
+        "constraint": null,
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": [
+          "file_8d91f87ccba2934f7908"
+        ]
+      }
+    ],
+    "runtime_hints": [
+      {
+        "runtime": "python",
+        "constraint": "3.12",
+        "evidence_ids": [
+          "file_6a314270a447ccf3cb1f"
+        ]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "pip",
+        "root": ".",
+        "evidence_ids": [
+          "file_accc0b79bc2facb17aab"
+        ]
+      }
+    ],
+    "entrypoints": [
+      {
+        "root": ".",
+        "command_hint": "python -m demo_cli",
+        "kind": "module",
+        "evidence_ids": [
+          "file_542798da6e562186cc71",
+          "tree_23a2d1aa950c1a17853b"
+        ]
+      }
+    ],
+    "env_var_names": [
+      "DEMO_API_TOKEN"
+    ],
+    "data_hints": [
+      "data/input.csv"
+    ],
+    "gpu_hints": []
+  },
+  "findings": [
+    {
+      "id": "finding_536254c627ffc60cf582",
+      "rule_id": "ENV_CONFIGURATION_REQUIRED",
+      "title": "ENV CONFIGURATION REQUIRED",
+      "description": "Нужна настройка переменных: DEMO_API_TOKEN",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [
+        "file_93c573a3bca5e7a0e202"
+      ],
+      "suggested_action": "Заполните окружение локально, не отправляйте секретные значения."
+    },
+    {
+      "id": "finding_e10ecc0d3837c4c57432",
+      "rule_id": "EXTERNAL_DATA_REFERENCED",
+      "title": "EXTERNAL DATA REFERENCED",
+      "description": "Упомянуты внешние данные/модели: data/input.csv. Доступность и получение ресурса требуют проверки.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [
+        "file_79a2f598f5df334859b5",
+        "file_ee4308359d393f2f07ab"
+      ],
+      "suggested_action": "Проверьте путь, рабочую папку и инструкции получения ресурсов."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "file_015ab934dc84c8d8b77c",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 2,
+      "line_end": 2,
+      "excerpt": "python-dotenv>=1.0",
+      "url": null
+    },
+    {
+      "id": "file_542798da6e562186cc71",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 18,
+      "line_end": 18,
+      "excerpt": ".venv/Scripts/python.exe -m demo_cli",
+      "url": null
+    },
+    {
+      "id": "file_6a314270a447ccf3cb1f",
+      "source": "file",
+      "path": ".python-version",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "3.12",
+      "url": null
+    },
+    {
+      "id": "file_7158cd13234107d82811",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 8,
+      "line_end": 8,
+      "excerpt": "python -m venv .venv",
+      "url": null
+    },
+    {
+      "id": "file_79a2f598f5df334859b5",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 13,
+      "line_end": 13,
+      "excerpt": "Obtain data/input.csv separately; it is not included in the repository.",
+      "url": null
+    },
+    {
+      "id": "file_8a628ad05122f1f06d7c",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 9,
+      "line_end": 9,
+      "excerpt": ".venv/Scripts/python.exe -m pip install -r requirements.txt",
+      "url": null
+    },
+    {
+      "id": "file_8d91f87ccba2934f7908",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 3,
+      "line_end": 3,
+      "excerpt": "rich",
+      "url": null
+    },
+    {
+      "id": "file_93c573a3bca5e7a0e202",
+      "source": "file",
+      "path": ".env.example",
+      "line_start": 2,
+      "line_end": 2,
+      "excerpt": "DEMO_API_TOKEN=[REDACTED]",
+      "url": null
+    },
+    {
+      "id": "file_accc0b79bc2facb17aab",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "requests==2.32.3",
+      "url": null
+    },
+    {
+      "id": "file_ee4308359d393f2f07ab",
+      "source": "file",
+      "path": "demo_cli/__main__.py",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "    print(Path(\"data/input.csv\").read_text(encoding=\"utf-8\"))",
+      "url": null
+    },
+    {
+      "id": "tree_23a2d1aa950c1a17853b",
+      "source": "tree",
+      "path": "demo_cli/__main__.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Наблюдаемая запись дерева: demo_cli/__main__.py (blob, mode 100644).",
+      "url": null
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 6,
+    "files_selected": 5,
+    "files_read": 5,
+    "bytes_read": 752,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  },
+  "selected_files": [
+    {
+      "path": ".env.example",
+      "content": "# All values are deliberately redacted.\nDEMO_API_TOKEN=[REDACTED]\n",
+      "size_bytes": 66,
+      "sha": "d7f673588f38f5d05fed18ca1cc8aadbd755d0bb"
+    },
+    {
+      "path": ".python-version",
+      "content": "3.12\n",
+      "size_bytes": 5,
+      "sha": "e4fba2183587225f216eeada4c78dfab6b2e65f5"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic Python CLI\n\nLocal fixture; not a live GitHub repository.\n\n## Setup\nUse Python 3.12.\n```powershell\npython -m venv .venv\n.venv/Scripts/python.exe -m pip install -r requirements.txt\n```\n\n## Data and environment\nObtain data/input.csv separately; it is not included in the repository.\nSet DEMO_API_TOKEN using .env.example; never paste a real token into reports.\n\n## Run\n```powershell\n.venv/Scripts/python.exe -m demo_cli\n```\n",
+      "size_bytes": 433,
+      "sha": "41e4abb8b7c7125c3a18fac2eb98e17627f8dd40"
+    },
+    {
+      "path": "demo_cli/__main__.py",
+      "content": "\"\"\"Synthetic source text. RepoDoctor must not execute this file.\"\"\"\nfrom pathlib import Path\n\ndef main():\n    print(Path(\"data/input.csv\").read_text(encoding=\"utf-8\"))\n\nif __name__ == \"__main__\":\n    main()\n",
+      "size_bytes": 207,
+      "sha": "91a88edc7d4b74c8487778018d1e6030373e3136"
+    },
+    {
+      "path": "requirements.txt",
+      "content": "requests==2.32.3\npython-dotenv>=1.0\nrich\n",
+      "size_bytes": 41,
+      "sha": "363791ca3bf574fc2707a6016db195ee87e4c2ed"
+    }
+  ]
+}

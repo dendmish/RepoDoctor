@@ -1,0 +1,51 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "unknown-stack-demo",
+    "url": "https://github.com/repodoctor-fixtures/unknown-stack-demo",
+    "default_branch": "main",
+    "resolved_commit": "235e646f4229385d01780692cd63542e7539f259",
+    "description": "SYNTHETIC fixture: нет README, manifest и известной точки входа"
+  },
+  "source_mode": "fixture",
+  "tree": [
+    {
+      "path": "LICENSE",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "ed7324d5708d056c653bc7cebc4c4684aee048c2",
+      "size": 51
+    },
+    {
+      "path": "notes.txt",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "a917b8567336127f097a6fc059d344ef52022ba8",
+      "size": 89
+    }
+  ],
+  "files": [
+    {
+      "path": "LICENSE",
+      "content": "Synthetic fixture authored for RepoDoctor testing.\n",
+      "size_bytes": 51,
+      "sha": "ed7324d5708d056c653bc7cebc4c4684aee048c2"
+    },
+    {
+      "path": "notes.txt",
+      "content": "Synthetic unsupported project.\nNo runtime, dependency manager or entrypoint is declared.\n",
+      "size_bytes": 89,
+      "sha": "a917b8567336127f097a6fc059d344ef52022ba8"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 2,
+    "files_selected": 2,
+    "files_read": 2,
+    "bytes_read": 140,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  }
+}

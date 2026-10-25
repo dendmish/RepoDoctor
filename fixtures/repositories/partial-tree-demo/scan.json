@@ -1,0 +1,181 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "partial-tree-demo",
+    "url": "https://github.com/repodoctor-fixtures/partial-tree-demo",
+    "default_branch": "main",
+    "resolved_commit": "c4d6b3a656626264f9db00ca92e982de9a4a2f0a",
+    "description": "SYNTHETIC fixture: неполное дерево и внешние данные без доказательства отсутствия"
+  },
+  "source_mode": "fixture",
+  "facts": {
+    "stack": "python",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "python",
+        "manifest_paths": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "torch",
+        "constraint": ">=2.2",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": [
+          "file_accc0b79bc2facb17aab"
+        ]
+      }
+    ],
+    "runtime_hints": [
+      {
+        "runtime": "python",
+        "constraint": "3.12",
+        "evidence_ids": [
+          "file_6a314270a447ccf3cb1f"
+        ]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "pip",
+        "root": ".",
+        "evidence_ids": [
+          "file_accc0b79bc2facb17aab"
+        ]
+      }
+    ],
+    "entrypoints": [],
+    "env_var_names": [],
+    "data_hints": [
+      "checkpoints/model.bin",
+      "data/training.csv"
+    ],
+    "gpu_hints": [
+      "Упоминание GPU/CUDA; необходимость и совместимость не проверены."
+    ]
+  },
+  "findings": [
+    {
+      "id": "finding_7a602c4b9ea13255e819",
+      "rule_id": "ENTRYPOINT_UNCLEAR",
+      "title": "ENTRYPOINT UNCLEAR",
+      "description": "Подтверждённая точка входа не найдена.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Уточните команду запуска выбранного подпроекта."
+    },
+    {
+      "id": "finding_a3a93c62ddc9d1a22e2c",
+      "rule_id": "GPU_REQUIREMENT_UNCLEAR",
+      "title": "GPU REQUIREMENT UNCLEAR",
+      "description": "Есть GPU/CUDA hints; необходимость GPU не доказана.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [
+        "file_7ec93d357599424fcf14"
+      ],
+      "suggested_action": "Уточните CPU/GPU workflow и совместимость драйвера отдельно."
+    },
+    {
+      "id": "finding_a8eb24a574d74c5ff0d9",
+      "rule_id": "PARTIAL_COVERAGE",
+      "title": "PARTIAL COVERAGE",
+      "description": "Анализ ограничен: SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub.; Синтетическое truncated tree: неизвестно, есть ли dataset в необозримой части дерева.",
+      "severity": "warning",
+      "confidence": "high",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Проверьте пропущенные файлы перед окончательными выводами."
+    },
+    {
+      "id": "finding_e10ecc0d3837c4c57432",
+      "rule_id": "EXTERNAL_DATA_REFERENCED",
+      "title": "EXTERNAL DATA REFERENCED",
+      "description": "Упомянуты внешние данные/модели: checkpoints/model.bin, data/training.csv. Дерево неполное: отсутствие ресурса не доказано.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": [
+        "file_2f1636bf6bfaf032644c"
+      ],
+      "suggested_action": "Проверьте путь, рабочую папку и инструкции получения ресурсов."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "file_2f1636bf6bfaf032644c",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 4,
+      "line_end": 4,
+      "excerpt": "Obtain data/training.csv and checkpoints/model.bin from the project maintainer.",
+      "url": null
+    },
+    {
+      "id": "file_6a314270a447ccf3cb1f",
+      "source": "file",
+      "path": ".python-version",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "3.12",
+      "url": null
+    },
+    {
+      "id": "file_7ec93d357599424fcf14",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "CUDA support depends on the selected environment; GPU is not confirmed.",
+      "url": null
+    },
+    {
+      "id": "file_accc0b79bc2facb17aab",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "torch>=2.2",
+      "url": null
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "tree_entries_seen": 3,
+    "files_selected": 3,
+    "files_read": 3,
+    "bytes_read": 299,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub.",
+      "Синтетическое truncated tree: неизвестно, есть ли dataset в необозримой части дерева."
+    ]
+  },
+  "selected_files": [
+    {
+      "path": ".python-version",
+      "content": "3.12\n",
+      "size_bytes": 5,
+      "sha": "e4fba2183587225f216eeada4c78dfab6b2e65f5"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic partial research repository\n\nThe observed tree is intentionally incomplete.\nObtain data/training.csv and checkpoints/model.bin from the project maintainer.\nCUDA support depends on the selected environment; GPU is not confirmed.\nNo supported run entrypoint is documented.\n",
+      "size_bytes": 283,
+      "sha": "767e77035cfd7164278854f9163d4437d8b89910"
+    },
+    {
+      "path": "requirements.txt",
+      "content": "torch>=2.2\n",
+      "size_bytes": 11,
+      "sha": "657e282eebed1bd4e3338fb34aa18603a0d22419"
+    }
+  ]
+}

@@ -1,6 +1,32 @@
 # RepoDoctor — roadmap для четырёх параллельных агентов
 
-Источник технических решений: [ARCHITECTURE.md](ARCHITECTURE.md). Этот файл определяет последовательность, зависимости, владельцев и подтверждённые статусы задач. Наличие документа не означает выполнение; актуальные отметки приведены в разделе 4 и checklist gates.
+Источник технических решений: [ARCHITECTURE.md](ARCHITECTURE.md). Этот файл определяет последовательность, зависимости, владельцев и подтверждённый статус задач. Наличие промпта или каркаса модуля не означает выполнение.
+
+## Текущее состояние — 25.10.2026
+
+Статусы сверены с кодом и handoff-файлами после объединения [PR №6](https://github.com/dendmish/RepoDoctor/pull/6) (`ee2ab9b`, C2/C3), на базе B2–B4 (`0f1a237`). Выполнены **10 из 20 задач: A1, A2, B1, B2, B3, B4, C1, C2, C3, D1**. Волна 1 завершена; в волне 2 завершены B2–B4 и C2/C3, остаются C4 и D2/D3. Из общих этапов закрыт **G0**, G1–G3 остаются открытыми. Работа в других ветках не считается завершённой в `main`.
+
+Проверка объединённого backend после B2–B4: `pytest -q` — **345 passed**; Ruff check/format включают backend и оба exporter-скрипта fixtures (из `backend`, Windows, Python 3.12.3). Проверены transport mocks, шесть цепочек fixture → scanner → fallback C1, все десять risk rules и source-only live smoke на RepoDoctor/Express. Эти проверки не заменяют открытые интеграционные и live-критерии G1–G3; подробности и SHA — в [handoff агента 2](docs/handoffs/agent_2.md).
+
+После C2/C3: `pytest -q` — **446 passed**, из них **157 intelligence tests**; Ruff check — **All checks passed**, format check — **68 files already formatted** (backend и три exporter-скрипта fixtures, Windows, Python 3.12.15). Проверены OpenAI SDK на mock transport, валидация и полный fallback, диагностика лога, шесть scan B3 × три shell, HTTP-путь через DI с настоящими source/scanner/intelligence, redaction и неизменность store. Live OpenAI не проверен: ключ/модель не заданы. Подробности — в [handoff агента 3](docs/handoffs/agent_3.md).
+
+Повторная приёмка frontend D1 (из `frontend`, Windows, Node 22.22.0, npm 11.6.2): `npm ci` — успешно; `npm run generate:api` — без diff generated types; `npm test` — **20 passed**; `npm run build` — typecheck и production build прошли; `npm run test:e2e` — **2 passed** в Chromium (MSW smoke, без настоящего backend). В `dist` отсутствуют worker MSW, `setupWorker` и `synthetic-example-model`. Для проверок использована отдельная временная папка: системный TEMP имеет ограничения доступа.
+
+| Выполнено | Результат | Подтверждение |
+|---|---|---|
+| A1 | Backend skeleton, DTO/Protocol, examples, OpenAPI, зафиксированные зависимости | `9698dd4`, [handoff агента 1](docs/handoffs/agent_1.md) |
+| G0 | Контракты 1.0 заморожены, исходная точка для параллельной работы | `c1b9c8a`, тег `g0`, [чеклист G0](#g0--контракты-заморожены) |
+| A2 | API services, TTL/LRU store, limiter, body limit, redaction | `e9d42f7`, [handoff агента 1](docs/handoffs/agent_1.md) |
+| B1 | URL/ref policy, шесть synthetic snapshots, fixture source | `1e22e93`, [handoff агента 2](docs/handoffs/agent_2.md) |
+| B2 | GitHub metadata/commit/tree/blobs, fixed host/SHA, bounded HTTP и redaction | [handoff агента 2](docs/handoffs/agent_2.md), transport tests и live smoke |
+| B3 | Python/Node/README parsers, project roots, реестр evidence и шесть StaticAnalysis examples | [handoff агента 2](docs/handoffs/agent_2.md), scanner/fixture tests |
+| B4 | Десять risk rules, budgets, partial coverage и совместимость с fallback C1 | [handoff агента 2](docs/handoffs/agent_2.md), regression tests |
+| C1 | Детерминированный fallback-план, provider Protocol и fake для tests | `f4490c3`, [PR №4](https://github.com/dendmish/RepoDoctor/pull/4), [handoff агента 3](docs/handoffs/agent_3.md); исторические статусы ветки C1 согласованы с актуальным main в [PR №7](https://github.com/dendmish/RepoDoctor/pull/7) |
+| C2 | OpenAI Responses adapter, prompts, bounded context, валидация плана и fallback | `3b0155f`, [PR №6](https://github.com/dendmish/RepoDoctor/pull/6), [handoff агента 3](docs/handoffs/agent_3.md); SDK transport mocks, без live AI |
+| C3 | Диагностика обработанного лога, log evidence, локальные правила и AI fallback | `3b0155f`, `cc20da2`, [PR №6](https://github.com/dendmish/RepoDoctor/pull/6), [handoff агента 3](docs/handoffs/agent_3.md); unit и HTTP DI tests |
+| D1 | React/TypeScript/Vite shell, generated API types, fetch client, формы и MSW | `afefc3b`, [PR №5](https://github.com/dendmish/RepoDoctor/pull/5), [handoff агента 4](docs/handoffs/agent_4.md) |
+
+Следующие доступные задачи: **C4** (агент 3), **D2** (агент 4). B2–B4 и C2/C3 завершены; агент 1 переходит к A3 после C4. Следующая задача агента 2 — B5 после G2. `IntelligenceServiceImpl.diagnose` реализован; OpenAI adapter проверен на mock transport, live AI ещё не проверен. D1 проверяет UI на MSW; полный отчёт, экспорт и диагностика относятся к D2/D3, реальный backend E2E — к D4. Source/scanner/intelligence работают вместе в HTTP DI-тесте, но production wiring A3 и полный UI ещё не подтверждены. Альтернативный MVP из PR №1 не включён в эту архитектуру.
 
 ## 1. Роли
 
@@ -67,38 +93,28 @@ flowchart TD
 
 ## 4. Таблица работ
 
-**Сверено 25.10.2026 по `main` на коммите `44b9050`.** Отметка «Выполнено» подтверждена handoff и принятыми изменениями. Для остальных задач завершение не подтверждено.
-
-- [x] A1 и G0 — каркас и замороженный контракт, тег `g0`; [handoff агента 1](docs/handoffs/agent_1.md).
-- [x] A2 — API, store, limiter, body limit и redaction; [PR №3](https://github.com/dendmish/RepoDoctor/pull/3) объединён в `main`.
-- [x] B1 — URL policy, synthetic snapshots и fixture source; [PR №2](https://github.com/dendmish/RepoDoctor/pull/2) объединён в `main`.
-- [x] C1 — fallback-планировщик и fake provider; [PR №4](https://github.com/dendmish/RepoDoctor/pull/4) объединён в `main`, [handoff агента 3](docs/handoffs/agent_3.md).
-- [ ] D1 — завершение frontend shell, generated types и MSW пока не подтверждено.
-
-На объединённом коде A2+B1+C1: `python -m pytest -q` → **274 passed**, `ruff check . ../fixtures/intelligence/export_c1_examples.py` → **All checks passed**, `ruff format --check . ../fixtures/intelligence/export_c1_examples.py` → **48 files already formatted** (из `backend`, Python 3.12.15, установленные зависимости). Это проверки backend; G1–G3 остаются незакрытыми. B3/scanner, C2/live AI, C3/diagnosis и A3/wiring ещё не завершены.
-
-| ID | Владелец | Работа | Входные условия | Передаёт | Статус |
+| ID | Статус в main | Владелец | Работа | Входные условия | Передаёт |
 |---|---|---|---|---|---|
-| A1 | 1 | Skeleton, DTO, Protocol, примеры, OpenAPI | Прочитана архитектура, пустой/проверенный workspace | G0 commit и contract examples | Выполнено |
-| A2 | 1 | Routes, store, limiter, body limits, redaction | A1 | API со stubs и тесты ошибок | Выполнено |
-| A3 | 1 | Wiring source/scanner/intelligence | A2, B4, C4 | Рабочий backend для G1 | Запланировано |
-| A4 | 1 | CI, сборка, container, live smoke | G1, frontend build от D3 | Воспроизводимый запуск, результаты live | Запланировано |
-| A5 | 1 | Release review, runbook, итоговая матрица | B5, C5, D5 | G3 или точный список блокеров | Запланировано |
-| B1 | 2 | URL policy, synthetic snapshots, fixture source | G0 | Offline входы для всех | Выполнено |
-| B2 | 2 | GitHub metadata/commit/tree/blobs | B1 | Live source на том же Protocol | Запланировано |
-| B3 | 2 | Python/Node/readme parsers, evidence | B1; обычно после B2 | StaticAnalysis на fixtures | Запланировано |
-| B4 | 2 | Risks, budgets, graceful degradation | B2, B3 | Репозиторный модуль готов к wiring | Запланировано |
-| B5 | 2 | Live acceptance и handoff | G2 | Проверенные repo SHA/coverage и ограничения | Запланировано |
-| C1 | 3 | Rules fallback и fake provider | G0; fixtures B1 желательны, допускается contract example | PlanResult без внешнего AI | Выполнено |
-| C2 | 3 | OpenAI adapter, prompt, validation | C1 | AI план с fallback | Запланировано |
-| C3 | 3 | Лог: правила, prompt, доказательства | C1; redaction A2 для интеграции | DiagnosisResult | Запланировано |
-| C4 | 3 | Injection/invalid output/failure tests | C2, C3 | Готовый IntelligenceService | Запланировано |
-| C5 | 3 | Live AI acceptance и rubric | G2 | Честный отчёт о качестве | Запланировано |
-| D1 | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks | Запланировано |
-| D2 | 4 | Report, evidence, commands, export | D1 | Экран результата | Запланировано |
-| D3 | 4 | Diagnosis, retry/error states | D2 | Полный пользовательский flow на mocks | Запланировано |
-| D4 | 4 | Real-backend E2E и интеграция | G1 | Сквозной браузерный прогон | Запланировано |
-| D5 | 4 | Доступность, полировка, demo | G2 | Сценарий защиты и резервный путь | Запланировано |
+| A1 | ✅ Выполнено | 1 | Skeleton, DTO, Protocol, примеры, OpenAPI | Прочитана архитектура, пустой/проверенный workspace | G0 commit и contract examples |
+| A2 | ✅ Выполнено | 1 | Routes, store, limiter, body limits, redaction | A1 | API со stubs и тесты ошибок |
+| A3 | ⬜ Не закрыто | 1 | Wiring source/scanner/intelligence | A2, B4, C4 | Рабочий backend для G1 |
+| A4 | ⬜ Не закрыто | 1 | CI, сборка, container, live smoke | G1, frontend build от D3 | Воспроизводимый запуск, результаты live |
+| A5 | ⬜ Не закрыто | 1 | Release review, runbook, итоговая матрица | B5, C5, D5 | G3 или точный список блокеров |
+| B1 | ✅ Выполнено | 2 | URL policy, synthetic snapshots, fixture source | G0 | Offline входы для всех |
+| B2 | ✅ Выполнено | 2 | GitHub metadata/commit/tree/blobs | B1 | Live source на том же Protocol |
+| B3 | ✅ Выполнено | 2 | Python/Node/readme parsers, evidence | B1; обычно после B2 | StaticAnalysis на fixtures |
+| B4 | ✅ Выполнено | 2 | Risks, budgets, graceful degradation | B2, B3 | Репозиторный модуль готов к wiring |
+| B5 | ⬜ Не закрыто | 2 | Live acceptance и handoff | G2 | Проверенные repo SHA/coverage и ограничения |
+| C1 | ✅ Выполнено | 3 | Rules fallback и fake provider | G0; fixtures B1 желательны, допускается contract example | PlanResult без внешнего AI |
+| C2 | ✅ Выполнено | 3 | OpenAI adapter, prompt, validation | C1 | AI план с fallback |
+| C3 | ✅ Выполнено | 3 | Лог: правила, prompt, доказательства | C1; redaction A2 для интеграции | DiagnosisResult |
+| C4 | ⬜ Не закрыто | 3 | Injection/invalid output/failure tests | C2, C3 | Готовый IntelligenceService |
+| C5 | ⬜ Не закрыто | 3 | Live AI acceptance и rubric | G2 | Честный отчёт о качестве |
+| D1 | ✅ Выполнено | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks |
+| D2 | ⬜ Не закрыто | 4 | Report, evidence, commands, export | D1 | Экран результата |
+| D3 | ⬜ Не закрыто | 4 | Diagnosis, retry/error states | D2 | Полный пользовательский flow на mocks |
+| D4 | ⬜ Не закрыто | 4 | Real-backend E2E и интеграция | G1 | Сквозной браузерный прогон |
+| D5 | ⬜ Не закрыто | 4 | Доступность, полировка, demo | G2 | Сценарий защиты и резервный путь |
 
 ## 5. Gates — что проверяется перед следующей волной
 
@@ -114,28 +130,30 @@ flowchart TD
 - [x] Каждый example валидируется соответствующим DTO.
 - [x] OpenAPI экспортируется без внешних ключей и сетевых запросов.
 - [x] Доступен backend stub для health/analysis/diagnosis, явно dev-only; он не выдаётся за live.
-- [x] Python версии зафиксированы; агент 4 фиксирует frontend lock в D1.
+- [x] Python версии зафиксированы; frontend lock и Node/npm baseline зафиксированы в D1.
 - [x] Остальным переданы commit ID, команды установки, пути примеров.
 
 ### G1 — целый offline-сценарий
 
 Владелец: агент 1, UI проверяет агент 4.
 
-**Статус: частично выполнен; G1 не закрыт.** Сверено 25.10.2026 по `main`, коммит `44b9050`. Галочки ниже подтверждают конкретные условия; сквозной offline-путь ещё не проверен.
+**Статус: частично выполнен; G1 не закрыт.** Реализованы A2/B1–B4/C1–C3/D1. Отметки подтверждают отдельные условия; backend HTTP-путь проверен через DI, сквозной offline-путь через API/UI с настоящими модулями ещё не проверен.
 
-- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI. **Частично:** B1 fixture source и C1 fallback готовы; нужны настоящий scanner, подключение модулей в A3 и UI.
-- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI. **Частично:** A2 sanitizer и API-оболочка диагностики готовы; `IntelligenceServiceImpl.diagnose` ещё бросает `NotImplementedError` (C3), UI отсутствует.
-- [x] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен. `Settings` запрещает `USE_DEV_STUBS=true` при `APP_ENV=production`; C1 строит план через настоящие rules. Подключение fallback к production API остаётся задачей A3.
-- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic. **Частично:** C1 unit-тесты подтверждают shell/cwd и целостность evidence IDs, fixture-результаты имеют synthetic-предупреждение; открытие evidence в UI ещё не проверялось.
-- [x] Неподдерживаемый fixture URL не возвращает чужой demo report. B1 `test_unknown_repository_does_not_fall_back` проверяет `RepositoryNotFoundError`; HTTP-тест `test_dev_stub_rejects_unknown_repository` проверяет 404 `REPOSITORY_NOT_FOUND` у dev stub. Проверка с настоящим source через production wiring ещё предстоит в A3.
-- [ ] Markdown export работает, сырой лог и секреты не попадают в него. **Не выполнено:** frontend exporter и его проверки ещё не реализованы (D2/D3).
-- [ ] HTTP/API/browser tests проходят без GitHub и AI. **Частично:** на объединённом backend прошли 274 offline-теста, включая HTTP/API; frontend/browser E2E ещё отсутствуют.
+- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI. **Частично:** шесть fixture → scanner → fallback цепочек и HTTP analysis/diagnosis с настоящими модулями через DI проверены тестами; UI shell работает на MSW. Нужны production wiring A3 и полный report UI D2.
+- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI. **Частично:** C3 реализует diagnosis; HTTP DI-тест проверяет A2 sanitizer → настоящие rules → DiagnosisResponse, маскирование секретов и неизменность store. UI диагностики относится к D3, production wiring — к A3.
+- [x] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен. `Settings` запрещает `USE_DEV_STUBS=true` в production; C1 строит план настоящими rules. Подключение fallback к production API остаётся задачей A3.
+- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic. **Частично:** C1–C3 tests подтверждают shell/cwd, evidence IDs и номера строк обработанного лога; проверены шесть scan B3 × три shell, synthetic-режим обозначен. Evidence viewer и его браузерная проверка ещё предстоят в D2.
+- [x] Неподдерживаемый fixture URL не возвращает чужой demo report. B1 проверяет `RepositoryNotFoundError`, HTTP-тест dev stub — 404 `REPOSITORY_NOT_FOUND`; production wiring с настоящим source ещё предстоит в A3.
+- [ ] Markdown export работает, сырой лог и секреты не попадают в него. **Не выполнено:** exporter и проверки относятся к D2/D3.
+- [ ] HTTP/API/browser tests проходят без GitHub и AI. **Частично:** прошли 446 backend-тестов (включая HTTP/API, source/scanner/intelligence и SDK transport mocks), ранее в D1 — 20 frontend-тестов и 2 browser smoke. Последние используют MSW и не подтверждают работу реального offline-конвейера. Сквозной браузерный прогон без MSW ещё не выполнен.
 
-Основания для отметок: `backend/tests/platform/test_app.py::test_dev_stubs_forbidden_in_production`, `backend/tests/platform/test_app.py::test_dev_stub_rejects_unknown_repository`, `backend/tests/repository/test_fixture_source.py::test_unknown_repository_does_not_fall_back`, `backend/tests/intelligence/test_rules.py`, `backend/tests/intelligence/test_examples.py`. Результаты общего backend-прогона приведены в разделе 4; модульные проверки не заменяют прохождение G1 в браузере.
+Основания для отмеченных условий и частичного прогресса: `backend/tests/platform/test_app.py::test_dev_stubs_forbidden_in_production`, `backend/tests/platform/test_app.py::test_dev_stub_rejects_unknown_repository`, `backend/tests/repository/test_fixture_source.py::test_unknown_repository_does_not_fall_back`, `backend/tests/intelligence/test_rules.py`, `test_examples.py`, `test_ai.py`, `test_diagnostics.py` и `test_integration.py`. Frontend D1: `frontend/tests/*.test.*` и `frontend/tests/e2e/shell.spec.ts`; сценарии MSW нельзя выдавать за реальный backend E2E или live-проверку.
 
 ### G2 — live-путь и сборка
 
-- [ ] Один Python и один npm public repo прочитаны live, результаты привязаны к SHA.
+**Статус: не закрыт.** Source-only live GitHub smoke выполнен в B2–B4; live AI, полный HTTP-путь и общая сборка не подтверждены.
+
+- [ ] Один Python и один npm public repo прочитаны live, результаты привязаны к SHA. **Частично:** напрямую через source/scanner прочитаны RepoDoctor (Python+Node) и Express (npm), SHA записаны в handoff агента 2. Проверка собранного API/продукта остаётся A4/B5.
 - [ ] Реальная модель дала план и диагноз; модель/дата/статус записаны. Если нет доступа, live-AI часть gate остаётся blocked, хотя offline демо можно показывать с явной пометкой.
 - [ ] Имитированные GitHub rate limit и AI timeout обработаны в тестах.
 - [ ] Frontend build, backend tests и browser E2E зелёные.
@@ -143,6 +161,8 @@ flowchart TD
 - [ ] Container запускается и healthcheck проходит; если Docker недоступен на машине, статус «не проверен», не «passed».
 
 ### G3 — можно защищать
+
+**Статус: не закрыт.** Финальная приёмка и репетиция ещё не подтверждены.
 
 - [ ] Репетиция на заранее выбранном repo/ref.
 - [ ] Есть живой пример и независимый fixture fallback на случай сети.
@@ -219,23 +239,23 @@ flowchart TD
 
 **Волна 0 — каркас (работает только агент 1)**
 
-1. **A1 — выполнено** · агент 1 — skeleton, DTO, Protocol, examples, OpenAPI, `uv.lock`. Остальные агенты в это время только продумывают fixtures, тестовые логи и UX-состояния, без кода и собственных API.
-2. **G0 — выполнено** · агент 1 — контракты заморожены; всем переданы commit ID, команды установки, пути examples.
+1. ✅ **A1 — выполнено** · агент 1 — skeleton, DTO, Protocol, examples, OpenAPI, `uv.lock`. Остальные агенты в это время только продумывают fixtures, тестовые логи и UX-состояния, без кода и собственных API.
+2. ✅ **G0 — выполнено** · агент 1 — контракты заморожены; всем переданы commit ID, команды установки, пути examples.
 
 **Волна 1 — после G0, четыре агента параллельно**
 
-3. **A2 — выполнено** · агент 1 — routes, store, limiter, body limit, redaction. Вход: G0.
-4. **B1 — выполнено** · агент 2 — URL policy, synthetic repositories, fixture source. Вход: G0.
-5. **C1 — выполнено** · агент 3 — fallback-план и fake provider. Вход: G0 (fixtures B1 желательны, но не обязательны).
-6. **D1** · агент 4 — каркас UI, generated types, MSW. Вход: G0.
+3. ✅ **A2 — выполнено** · агент 1 — routes, store, limiter, body limit, redaction. Вход: G0.
+4. ✅ **B1 — выполнено** · агент 2 — URL policy, synthetic repositories, fixture source. Вход: G0.
+5. ✅ **C1 — выполнено** · агент 3 — fallback-план и fake provider. Вход: G0 (fixtures B1 желательны, но не обязательны).
+6. ✅ **D1 — выполнено** · агент 4 — каркас UI, generated types, MSW. Вход: G0.
 
 **Волна 2 — модули (внутри каждого агента последовательно)**
 
-7. **B2** · агент 2 — GitHub source (metadata, commit, tree, blobs). Вход: B1.
-8. **B3** · агент 2 — парсеры Python/Node/README, evidence registry. Вход: B1, обычно после B2.
-9. **B4** · агент 2 — риски, бюджеты, graceful degradation. Вход: B2 + B3.
-10. **C2** · агент 3 — OpenAI adapter, prompts, валидация плана. Вход: C1.
-11. **C3** · агент 3 — диагностика лога. Вход: C1, обычно после C2; redaction из A2 для полного API-пути.
+7. ✅ **B2 — выполнено** · агент 2 — GitHub source (metadata, commit, tree, blobs). Вход: B1.
+8. ✅ **B3 — выполнено** · агент 2 — парсеры Python/Node/README, evidence registry. Вход: B1, обычно после B2.
+9. ✅ **B4 — выполнено** · агент 2 — риски, бюджеты, graceful degradation. Вход: B2 + B3.
+10. ✅ **C2 — выполнено** · агент 3 — OpenAI adapter, prompts, валидация плана. Вход: C1. Проверено на mock transport; live AI остаётся в C5/G2.
+11. ✅ **C3 — выполнено** · агент 3 — диагностика лога. Вход: C1, обычно после C2; redaction из A2 для полного API-пути. Правила и HTTP DI-путь проверены; UI относится к D3.
 12. **C4** · агент 3 — injection, invalid output, failure tests. Вход: C2 + C3.
 13. **D2** · агент 4 — отчёт, evidence, команды, экспорт. Вход: D1.
 14. **D3** · агент 4 — лог, diagnosis, ошибки, retry. Вход: D2.

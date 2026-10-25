@@ -1,0 +1,189 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "node-api-demo",
+    "url": "https://github.com/repodoctor-fixtures/node-api-demo",
+    "default_branch": "main",
+    "resolved_commit": "164c8e39ea5b6b26c9a5423372a7e8d6392f2533",
+    "description": "SYNTHETIC fixture: npm API со scripts, engines и lock-файлом"
+  },
+  "source_mode": "fixture",
+  "facts": {
+    "stack": "node",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "node",
+        "manifest_paths": [
+          "package.json"
+        ]
+      }
+    ],
+    "dependencies": [],
+    "runtime_hints": [
+      {
+        "runtime": "node",
+        "constraint": "22.12.0",
+        "evidence_ids": [
+          "file_eef380fdce96a0f932d8"
+        ]
+      },
+      {
+        "runtime": "node",
+        "constraint": ">=22.12.0",
+        "evidence_ids": [
+          "file_0d5fd667db194d80619b"
+        ]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "npm",
+        "root": ".",
+        "evidence_ids": [
+          "file_7158cd13234107d82811",
+          "file_ff25b9ec49afcd915c36",
+          "tree_053150b640a7ce75eff6"
+        ]
+      }
+    ],
+    "entrypoints": [
+      {
+        "root": ".",
+        "command_hint": "npm run dev",
+        "kind": "script",
+        "evidence_ids": [
+          "file_c0bbdf197a5d07b2f211"
+        ]
+      },
+      {
+        "root": ".",
+        "command_hint": "npm run start",
+        "kind": "script",
+        "evidence_ids": [
+          "file_6a7d88c4f0023692715e"
+        ]
+      }
+    ],
+    "env_var_names": [],
+    "data_hints": [],
+    "gpu_hints": []
+  },
+  "findings": [],
+  "evidence": [
+    {
+      "id": "file_0d5fd667db194d80619b",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 7,
+      "line_end": 7,
+      "excerpt": "    \"node\": \">=22.12.0\"",
+      "url": null
+    },
+    {
+      "id": "file_6a7d88c4f0023692715e",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 10,
+      "line_end": 10,
+      "excerpt": "    \"start\": \"node src/server.js\",",
+      "url": null
+    },
+    {
+      "id": "file_7158cd13234107d82811",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 8,
+      "line_end": 8,
+      "excerpt": "npm ci",
+      "url": null
+    },
+    {
+      "id": "file_8a628ad05122f1f06d7c",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 9,
+      "line_end": 9,
+      "excerpt": "npm run start",
+      "url": null
+    },
+    {
+      "id": "file_c0bbdf197a5d07b2f211",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 11,
+      "line_end": 11,
+      "excerpt": "    \"dev\": \"node --watch src/server.js\"",
+      "url": null
+    },
+    {
+      "id": "file_eef380fdce96a0f932d8",
+      "source": "file",
+      "path": ".nvmrc",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "22.12.0",
+      "url": null
+    },
+    {
+      "id": "file_ff25b9ec49afcd915c36",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "  \"packageManager\": \"npm@10.9.0\",",
+      "url": null
+    },
+    {
+      "id": "tree_053150b640a7ce75eff6",
+      "source": "tree",
+      "path": "package-lock.json",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Наблюдаемая запись дерева: package-lock.json (blob, mode 100644).",
+      "url": null
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 6,
+    "files_selected": 5,
+    "files_read": 5,
+    "bytes_read": 831,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  },
+  "selected_files": [
+    {
+      "path": ".nvmrc",
+      "content": "22.12.0\n",
+      "size_bytes": 8,
+      "sha": "1d9b7831ba9d90866e21ce7154fbb84cc448ef60"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic Node API\n\nLocal offline fixture.\n\n## Setup\nNode.js >=22.12.0 and npm are required.\n```bash\nnpm ci\nnpm run start\n```\n",
+      "size_bytes": 128,
+      "sha": "862b1f3a14f441a7903b65b706fb89a36842c4c6"
+    },
+    {
+      "path": "package-lock.json",
+      "content": "{\n  \"name\": \"synthetic-node-api\",\n  \"version\": \"1.0.0\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"synthetic-node-api\",\n      \"version\": \"1.0.0\",\n      \"engines\": {\n        \"node\": \">=22.12.0\"\n      }\n    }\n  }\n}\n",
+      "size_bytes": 255,
+      "sha": "04e19ec1ba92607eac1e971bf9414a712ea9574a"
+    },
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"synthetic-node-api\",\n  \"private\": true,\n  \"version\": \"1.0.0\",\n  \"packageManager\": \"npm@10.9.0\",\n  \"engines\": {\n    \"node\": \">=22.12.0\"\n  },\n  \"scripts\": {\n    \"start\": \"node src/server.js\",\n    \"dev\": \"node --watch src/server.js\"\n  },\n  \"dependencies\": {}\n}\n",
+      "size_bytes": 271,
+      "sha": "5a223de82ea1f7acb3e517eea433a1d77d9d17a4"
+    },
+    {
+      "path": "src/server.js",
+      "content": "// Synthetic source text. RepoDoctor never executes it.\nimport { createServer } from \"node:http\";\ncreateServer((req, res) => res.end(\"synthetic fixture\")).listen(3000);\n",
+      "size_bytes": 169,
+      "sha": "46f750438f59f4d94aec796f5da241f7282cfb30"
+    }
+  ]
+}
