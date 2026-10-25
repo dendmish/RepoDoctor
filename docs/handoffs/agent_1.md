@@ -2,6 +2,8 @@
 
 ## A3 — wiring модулей, выполнено в ветке feat/c4-a3-hardening-wiring, 25.10.2026
 
+Обновление после merge: [PR №9](https://github.com/dendmish/RepoDoctor/pull/9) объединён в `main` (`7add9dd`), A3 выполнен. D2/D3 также объединены через PR №8; упоминания об отсутствующем UI ниже описывают состояние исходной ветки до этого merge. G1 остаётся открытым до общей браузерной проверки без MSW.
+
 База: `d04094c`, контракт 1.0; B4 и C2/C3 в main, C4 завершён в этой же ветке.
 Production backend wiring выполнен. **G1 не закрыт:** report/evidence/export D2 и
 diagnosis UI D3 отсутствуют, поэтому browser analyze → report → log → diagnosis →

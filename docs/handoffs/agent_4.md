@@ -72,7 +72,7 @@ npm audit после обновления — 0 vulnerabilities.
 
 ## D2/D3 — отчёт, экспорт и диагностика (25.10.2026)
 
-Статус: реализованы и проверены в ветке `agent-4-d2-d3-report-diagnosis`; изменения передаются через PR. База — `main` `0f1a237`; исходные контракты G0 1.0 сохранены. Отметки этого раздела не означают, что PR уже объединён в main или что G1/D4 закрыты.
+Статус: done; [PR №8](https://github.com/dendmish/RepoDoctor/pull/8) объединён в `main` 25.10.2026, merge commit `76addf1`. Реализация `d3853b2` выполнена на базе `0f1a237` и перед PR перебазирована на `d04094c`. Исходные контракты G0 1.0 сохранены. G1/D4 этим merge не закрыты.
 
 Файлы: `frontend/src/components/{AnalysisReport,ReportSections,EvidencePanel,CommandBlock,RunPlanView,DiagnosisPanel,ErrorBanner}.tsx`, `hooks/useDiagnosis.ts`, `hooks/useAnalysis.ts`, `lib/{evidence,exportMarkdown}.ts`, App/types/CSS/MSW, новые report/export/diagnosis tests, browser report.spec, Playwright config и frontend README.
 

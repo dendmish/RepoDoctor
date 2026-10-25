@@ -2,6 +2,8 @@
 
 ## C4 · Волна 2 — выполнено в ветке feat/c4-a3-hardening-wiring, 25.10.2026
 
+Статус в main: [PR №9](https://github.com/dendmish/RepoDoctor/pull/9) объединён 25.10.2026 (`7add9dd`); C4 и A3 завершены. Нижеследующий отчёт сохраняет подробности реализации и проверок исходной ветки.
+
 База: `d04094c` (main с C2/C3 и B2–B4). Контракт 1.0 и зависимости не изменены.
 Изменения: `intelligence/{context,validation}.py`, `tests/intelligence/test_adversarial.py`,
 `fixtures/intelligence/adversarial/*`, `fixtures/intelligence/QUALITY_REVIEW.md`.
