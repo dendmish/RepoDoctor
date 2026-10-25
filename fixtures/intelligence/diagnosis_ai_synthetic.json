@@ -1,0 +1,116 @@
+{
+  "summary": "Пример AI-диагностики: проверьте окружение и установку manifest.",
+  "causes": [
+    {
+      "id": "ai_cause_1",
+      "title": "Модуль недоступен в текущем Python-окружении",
+      "explanation": "Python сообщает об отсутствии requests. Одноимённая зависимость есть в manifest; её установка не подтверждена. Корень: .; manifest: requirements.txt. ",
+      "confidence": "medium",
+      "origin": "ai",
+      "evidence_ids": [
+        "log_2",
+        "ev_requirements"
+      ],
+      "fixes": [
+        {
+          "id": "fix_module",
+          "title": "Проверить окружение и требования проекта",
+          "description": "Проверьте интерпретатор и виртуальное окружение. Выполните установку по подтверждённому manifest и workflow плана; не устанавливайте пакет по import-name.",
+          "commands": [
+            {
+              "shell": "powershell",
+              "text": ".venv/Scripts/python.exe -c \"import sys; print(sys.executable)\"",
+              "cwd": "<repo>",
+              "explanation": "Диагностическая проверка; команда ещё не выполнялась.",
+              "requires_review": true
+            }
+          ],
+          "evidence_ids": [
+            "log_2",
+            "ev_requirements"
+          ],
+          "verification": "Повторите исходную команду в указанной cwd и сравните новый обезличенный лог.",
+          "assumptions": []
+        }
+      ],
+      "verification": "Повторите исходную команду в указанной cwd и сравните новый обезличенный лог."
+    }
+  ],
+  "questions": [],
+  "evidence": [
+    {
+      "id": "ev_readme_run",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 12,
+      "line_end": 14,
+      "excerpt": "```\npython -m demo_cli --help\n```",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/README.md#L12-L14"
+    },
+    {
+      "id": "ev_requirements",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 1,
+      "line_end": 3,
+      "excerpt": "requests==2.32.3\npython-dotenv>=1.0\nrich",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/requirements.txt#L1-L3"
+    },
+    {
+      "id": "ev_python_version",
+      "source": "file",
+      "path": ".python-version",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "3.12",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.python-version#L1-L1"
+    },
+    {
+      "id": "ev_env_example",
+      "source": "file",
+      "path": ".env.example",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "DEMO_API_TOKEN=",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.env.example#L1-L1"
+    },
+    {
+      "id": "ev_tree_main",
+      "source": "tree",
+      "path": "src/demo_cli/__main__.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/src/demo_cli/__main__.py"
+    },
+    {
+      "id": "log_1",
+      "source": "log",
+      "path": null,
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "Traceback (most recent call last):",
+      "url": null
+    },
+    {
+      "id": "log_2",
+      "source": "log",
+      "path": null,
+      "line_start": 2,
+      "line_end": 2,
+      "excerpt": "ModuleNotFoundError: No module named 'requests'",
+      "url": null
+    }
+  ],
+  "generation": {
+    "mode": "ai",
+    "reason": null,
+    "model": "synthetic-example-model",
+    "prompt_version": "diagnosis-v1"
+  },
+  "warnings": [
+    "Причины предположительные; исправления и команды не выполнялись.",
+    "Диагностика использует synthetic fixture репозитория.",
+    "Синтетический model output из exporter; live AI не вызывался."
+  ]
+}

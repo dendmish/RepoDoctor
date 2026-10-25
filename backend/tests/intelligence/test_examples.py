@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from repodoctor.contracts.api import check_evidence_registry, collect_evidence_refs
-from repodoctor.contracts.domain import PlanResult
+from repodoctor.contracts.domain import DiagnosisResult, PlanResult
 from tests.intelligence.conftest import scan_from_example
 
 FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "intelligence"
@@ -33,3 +33,36 @@ def test_handoff_examples_have_honest_mode_and_existing_evidence(
     assert all(
         c.shell == shell and c.requires_review for s in result.run_plan.steps for c in s.commands
     )
+
+
+@pytest.mark.parametrize(
+    ("filename", "mode", "reason"),
+    [
+        ("diagnosis_rules_module.json", "fallback", "disabled_by_user"),
+        ("diagnosis_unknown.json", "fallback", "disabled_by_user"),
+        ("diagnosis_ai_synthetic.json", "ai", None),
+        ("diagnosis_ai_timeout.json", "fallback", "timeout"),
+    ],
+)
+def test_diagnostic_examples_are_self_contained(filename, mode, reason):
+    result = DiagnosisResult.model_validate_json((FIXTURES / filename).read_text(encoding="utf-8"))
+    check_evidence_registry(result.evidence, collect_evidence_refs(result.causes))
+    assert result.generation.mode == mode
+    assert result.generation.reason == reason
+    assert result.causes or result.questions
+    if mode == "ai":
+        assert result.generation.model == "synthetic-example-model"
+        assert all(cause.origin == "ai" for cause in result.causes)
+        assert any("live AI не вызывался" in warning for warning in result.warnings)
+
+
+def test_ai_plan_example_is_explicitly_synthetic_and_grounded():
+    result = PlanResult.model_validate_json(
+        (FIXTURES / "plan_ai_synthetic.json").read_text(encoding="utf-8")
+    )
+    check_evidence_registry(
+        result.evidence, collect_evidence_refs(result.run_plan, result.additional_findings)
+    )
+    assert result.generation.mode == "ai"
+    assert result.generation.model == "synthetic-example-model"
+    assert any("live AI не вызывался" in warning for warning in result.warnings)

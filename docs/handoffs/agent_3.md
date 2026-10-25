@@ -1,5 +1,116 @@
 # Handoff — агент 3 (AI / Diagnostics)
 
+## C2/C3 · Волна 2 — выполнено в ветке 25.10.2026
+
+База: `0f1a237` (main с B2–B4), контракт 1.0 без изменений. Обе задачи реализованы
+в зоне агента 3; зависимости, composition root, DTO/OpenAPI, routes, scanner и UI
+не менялись. Следующий этап агента 3 — **C4**, затем A3 wiring и live acceptance C5.
+Ниже C1 сохранён как исторический handoff.
+
+### C2: адаптер, контекст и валидация
+
+- `provider.py`: `OpenAIProvider(settings)` реализует `IntelligenceProvider`
+  (`PlanProvider` + `DiagnosisProvider`, `model`). Клиент ленивый и закрывается после
+  каждой операции, включая cancellation. Ключ только из Settings; endpoint фиксирован
+  `https://api.openai.com/v1`; `OPENAI_BASE_URL` игнорируется. Без credentials или при
+  `use_ai=false` клиент не создаётся. Fake/ExampleProvider не выбирается автоматически.
+- Фактически проверен SDK **openai 3.37.0**, его сигнатура `AsyncResponses.parse` и
+  [официальный Responses Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
+  Один `responses.parse(text_format=...)` на операцию; `max_retries=0`, timeout из
+  Settings (40 s по умолчанию), внешний `asyncio.timeout`, configurable output tokens,
+  `store=false`, без tools и repair loop. Реальные SDK parsing и request schema
+  проверены через `httpx.MockTransport`, без запросов OpenAI.
+- Отдельные инструкции `prompts/analysis.txt` (`analysis-v1`) и `diagnosis.txt`
+  (`diagnosis-v1`); JSON с недоверенными данными передаётся отдельно от instructions.
+  Модельные DTO не содержат HTTP metadata, registry/URLs или origin причин/находок.
+  Origin, IDs findings/causes и generation выставляет сервер.
+- `context.py`: детерминированный repo JSON до 48 000 символов, включая baseline plan.
+  Facts вместе с evidence добавляются атомарно, затем findings и redacted excerpts;
+  при сокращении есть limitations и warning. Маскирование использует A2 `redact_text`.
+- `validation.py`: повторная проверка DTO даже после typed provider, evidence IDs,
+  лимиты текста/списков/steps/commands, уникальность step IDs, shell/cwd, источники,
+  verification, prerequisites, URL policy и запрещённые команды. Модель не может
+  повысить недостаточный baseline до actionable. `requires_review=true` выставляет сервер.
+- Консервативная граница C2: команды AI-плана должны **полностью совпадать с командами
+  C1 в исходном порядке**, включая cwd/shell и evidence. AI улучшает пояснения,
+  вопросы и additional findings; новые произвольные команды не поддержаны. Это
+  предотвращает выдуманный entrypoint/runtime и потерю prerequisite; ошибка любой
+  существенной части возвращает fallback целиком. Regex policy не является sandbox
+  и не доказывает семантическую истинность всех текстовых рекомендаций.
+- Refusal, incomplete, отсутствие parsed output, invalid output, 429, network и timeout
+  дают безопасные reasons и warnings; upstream body/ключи не возвращаются. Некорректный
+  HTTP envelope SDK может классифицировать как provider_unavailable, schema-invalid
+  model content — invalid_output. Статические findings не мутируются и сохраняются
+  платформой при объединении с additional findings (origin=ai).
+
+### C3: диагностика обработанного лога
+
+- `diagnostics.py`: семь конкретных классов сигнатур + unknown: ModuleNotFoundError,
+  FileNotFoundError/ENOENT, явно названная missing env, Python incompatibility,
+  Node engine mismatch, занятый порт, CUDA/driver. Одного слова error недостаточно.
+- `prepare_log(SanitizedLog)` создаёт `log_N` evidence, path/url=null, excerpt ≤500
+  символов. JSON лога ≤16 000 символов. Сохраняются начало, traceback/сигнатуры,
+  последние строки; IDs и номера относятся к полному sanitized log. Truncation явный.
+- Причины включают manifest/root, repo+log evidence, confidence, fixes и verification.
+  Для ModuleNotFoundError сначала проверяется интерпретатор и manifest, distribution
+  по import не угадывается. Для файла предлагается проверить cwd и реальные данные;
+  для env только имя; runtime сверяется с manifest, конфликт требует вопроса; port
+  не приводит к kill, CUDA не приводит к универсальному install.
+- Диагностический AI получает bounded repo, plan summary/baseline, обработанные
+  command/log и разрешённые диагностические команды. Не больше пяти причин; каждая
+  должна ссылаться на log evidence. Invalid IDs/shell/path/commands/пустой ответ
+  приводят к локальным причинам или вопросам, mode=fallback.
+- Лог/диагностика не записываются в store и не логируются. HTTP DI-тест с настоящими
+  A2 services, fixture source B1, scanner B3 и IntelligenceService проверяет redaction
+  до анализа, валидный DTO и неизменность сохранённого AnalysisContext.
+- Ограничения: сигнатуры намеренно узкие; custom env сообщения могут попасть в unknown.
+  Совпадение имени dependency с import не доказывает их тождественность/установку и
+  не вызывает pip install import-name. Выбранные excerpts могут не включать весь лог;
+  полные пути из traceback остаются в processed evidence, а не становятся shell-командами.
+
+### Проверки и примеры для агентов 1/4
+
+Windows, Python 3.12.15. Из `backend`:
+
+```powershell
+.venv/Scripts/python.exe -m pytest -q
+# 446 passed (157 intelligence tests; baseline main — 345 tests).
+.venv/Scripts/ruff.exe check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# All checks passed!
+.venv/Scripts/ruff.exe format --check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# 68 files already formatted.
+```
+
+Из корня:
+
+```powershell
+backend/.venv/Scripts/python.exe fixtures/intelligence/export_c2_c3_examples.py
+# Пять воспроизводимых PlanResult/DiagnosisResult examples; без сети.
+git diff --check
+# OK.
+```
+
+Проверены success/failure реального SDK на mock transport, fixed host/model/timeout/
+retries/output budget/schema, отсутствие вызова при disabled/missing credentials,
+whole fallback, wrong shell/cwd/evidence/entrypoint, dangerous commands и URL, limits,
+cancellation, trimmed traceback и Windows path, known/missing package, env placeholder,
+conflicting runtime, 18 комбинаций **шесть scan B3 × три shell** и HTTP redaction/store.
+
+В `fixtures/intelligence`: `plan_ai_synthetic.json`, `diagnosis_rules_module.json`,
+`diagnosis_unknown.json`, `diagnosis_ai_synthetic.json`, `diagnosis_ai_timeout.json`.
+AI examples явно используют synthetic provider/model и имеют соответствующий warning;
+это не live результаты. UI следует показывать generation.mode/reason, warnings,
+неопределённость причин и requires_review для команд.
+
+Для A3: внедрять `IntelligenceServiceImpl(OpenAIProvider(settings))`, либо
+`IntelligenceServiceImpl()` для полностью локальных правил. Публичные методы и DTO
+соответствуют `contracts.ports.IntelligenceService`. Жизненный цикл клиента не требует
+изменений app lifespan. При use_ai=false обе операции остаются без AI-сети.
+
+**Live OpenAI не проверен:** `Settings().ai_configured == false`, ключ/модель не заданы.
+Не проверялись платные model calls, выполнение команд пользователя или реальные
+Linux/macOS shells. C4/C5, production wiring A3 и G1–G3 этим PR не закрываются.
+
 ## C1 · Волна 1 — выполнено 25.10.2026
 
 ```text
