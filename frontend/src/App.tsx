@@ -1,8 +1,10 @@
 import { AnalysisForm } from './components/AnalysisForm';
+import { AnalysisReport } from './components/AnalysisReport';
+import { ErrorBanner } from './components/ErrorBanner';
 import { useAnalysis } from './hooks/useAnalysis';
 
 export default function App({ mocked = false }: { mocked?: boolean }) {
-  const { state, submit, cancel } = useAnalysis();
+  const { state, submit, cancel, retry, lastRequest } = useAnalysis();
   return (
     <main>
       <header>
@@ -26,32 +28,9 @@ export default function App({ mocked = false }: { mocked?: boolean }) {
           <small>Сервер может продолжить работу после прекращения ожидания.</small>
         </section>
       )}
-      {state.status === 'error' && (
-        <section role="alert">
-          <h2>Не удалось завершить анализ</h2>
-          <p>{state.error.message}</p>
-          <p>Код: {state.error.code}</p>
-          {state.error.requestId && <p>Request ID: {state.error.requestId}</p>}
-          {state.error.details.map((detail, i) => <p key={i}>{detail}</p>)}
-          <p>{state.error.retryable
-            ? 'Нажмите «Анализировать», чтобы повторить вручную.'
-            : 'Проверьте введённые данные перед новой отправкой.'}</p>
-        </section>
-      )}
+      {state.status === 'error' && <ErrorBanner error={state.error} title="Не удалось завершить анализ" onRetry={retry} />}
       {state.status === 'success' && (
-        <section aria-label="Результат анализа">
-          <h2>{state.data.repository.name}</h2>
-          <p role="status">Ответ получен</p>
-          <p>Источник: {state.data.source_mode} · Генерация: {state.data.generation.mode}</p>
-          {state.data.generation.reason && <p>Причина: {state.data.generation.reason}</p>}
-          <p>{state.data.target.os} / {state.data.target.shell}</p>
-          <p>{state.data.run_plan.summary}</p>
-          {state.data.warnings.map((warning, i) => <p key={i}>{warning}</p>)}
-          <small>
-            Каркас D1. Полный отчёт и диагностика появятся в следующих этапах.
-            Команды не выполнялись.
-          </small>
-        </section>
+        <AnalysisReport key={state.data.analysis_id} data={state.data} initialUseAI={lastRequest?.use_ai ?? true} onReanalyze={retry} />
       )}
     </main>
   );

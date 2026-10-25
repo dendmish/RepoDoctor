@@ -69,3 +69,55 @@ npm audit после обновления — 0 vulnerabilities.
 Разблокирует: D2; агенту 1 переданы scripts/dev URL/build path.
 Блокер: нет.
 Следующая задача: D2.
+
+## D2/D3 — отчёт, экспорт и диагностика (25.10.2026)
+
+Статус: реализованы и проверены в ветке `agent-4-d2-d3-report-diagnosis`; изменения передаются через PR. База — `main` `0f1a237`; исходные контракты G0 1.0 сохранены. Отметки этого раздела не означают, что PR уже объединён в main или что G1/D4 закрыты.
+
+Файлы: `frontend/src/components/{AnalysisReport,ReportSections,EvidencePanel,CommandBlock,RunPlanView,DiagnosisPanel,ErrorBanner}.tsx`, `hooks/useDiagnosis.ts`, `hooks/useAnalysis.ts`, `lib/{evidence,exportMarkdown}.ts`, App/types/CSS/MSW, новые report/export/diagnosis tests, browser report.spec, Playwright config и frontend README.
+
+### D2
+
+- [x] SummaryCard: repo identity, SHA, target, stack, source/generation modes, reason/model/prompt version, даты и warnings.
+- [x] CoverageNotice: partial limitations, реальные counters, пояснение ограниченной выборки без выдуманного процента покрытия.
+- [x] FactsPanel: roots/manifests, runtime, managers, сворачиваемые dependency table, entrypoints, env names/data/GPU hints.
+- [x] FindingsList: severity текстом/цветом, confidence, origin, rule, suggested action и references.
+- [x] RunPlanView/RunSteps: questions до команд, prerequisites, assumptions, порядок, shell/cwd, verification; команды не выдаются за выполненные.
+- [x] EvidenceProvider/Panel: собственные registries анализа и диагностики, открытие/focus по ссылке, file/tree/log, missing reference как видимый defect, escaped excerpts.
+- [x] HTTPS GitHub allowlist с запретом credentials/нестандартных ports; `noopener noreferrer`. Fixture evidence остаётся локальным даже в старых примерах с synthetic URL.
+- [x] Clipboard feedback success/failure; копирование ничего не исполняет.
+- [x] Markdown: metadata/provenance/SHA/coverage/facts/findings/plan/sources и полученная diagnosis; HTML/Markdown escaping, code fence длиннее вложенных backticks, безопасное filename, Blob URL cleanup. Исходные log/command не передаются exporter.
+
+### D3
+
+- [x] Controlled log/command form, 30000/2000 chars, counters, reject whitespace, target из анализа, видимый use_ai opt-out и privacy notice.
+- [x] Отправка только по submit; ввод только в памяти React, без storage/analytics/console body.
+- [x] Independent useDiagnosis, timeout API 60s, duplicate guard, manual retry/cancel, cleanup, ID/sequence guard и reject mismatched analysis response.
+- [x] Новый анализ очищает ввод/диагноз; late success/rejection старой операции игнорируется.
+- [x] Causes/confidence/origin, fixes/commands/verifications, questions и mode/reason; отсутствует заявление «исправлено».
+- [x] Общие ErrorBanner для validation/404/413/429/upstream/network/timeouts/500, safe details и Request ID. Expired context → только явный повтор анализа, лог автоматически не пересылается.
+- [x] MSW scenarios для success, unknown/fallback, expired, busy и network; production mock code не запускается.
+
+### Проверки
+
+Windows, Node 22.22.0, npm 11.6.2; версии package/lock не менялись.
+
+```text
+npm ci                          → OK, frozen dependencies
+npm run typecheck               → OK
+npm test                        → 53 passed (20 D1 + 33 D2/D3)
+npm run build                   → OK, typecheck + production Vite build
+npm run generate:api            → OK, generated.ts без diff
+PLAYWRIGHT_BROWSER_CHANNEL=msedge npm run test:e2e
+                                → 4 passed, Edge 156 / Chromium engine
+Production asset scan           → нет setupWorker / mockServiceWorker / synthetic-example-model
+git diff --check                → OK
+```
+
+Для изолированного runtime использованы зафиксированные Node/npm в отдельной временной папке; TEMP/TMP перенаправлены в рабочий каталог проверки. Машинные пути не зашиты в проект. Скачанный Chromium 140 не стартовал из-за Windows SideBySide (до выполнения тестов), поэтому добавлен optional `PLAYWRIGHT_BROWSER_CHANNEL`; default остаётся Chromium. Установленный Edge/Chromium прошёл все 4 browser tests.
+
+Визуально просмотрены `report-desktop.png` и `plan-mobile.png`: читаемые metadata/coverage и команды, длинные строки переносятся, горизонтального overflow на 375px нет. Изображения создаёт Playwright в игнорируемом `frontend/test-results/`, в PR не включаются.
+
+Не проверено: настоящий backend D4, live GitHub/AI через интерфейс, Docker, Linux/macOS. Browser сценарии явно используют MSW и не закрывают G1/G2. Backend, DTO, OpenAPI, generated.ts и зависимости не изменены. Runtime validation полного успешного DTO остаётся исходным ограничением D1: фронтенд типизирован по контрактам, backend обязан возвращать валидный DTO.
+
+Для агента 1: `npm run build` выдаёт готовый `frontend/dist`; API остаётся `/api/v1` с прежними request/response. Следующая задача роли — D4 после G1; D5/live demo этим PR не закрываются.
