@@ -1,6 +1,22 @@
 # RepoDoctor — roadmap для четырёх параллельных агентов
 
-Источник технических решений: [ARCHITECTURE.md](ARCHITECTURE.md). Этот файл определяет последовательность, зависимости и владельцев. Все задачи ниже пока запланированы; наличие документа не означает выполнение.
+Источник технических решений: [ARCHITECTURE.md](ARCHITECTURE.md). Этот файл определяет последовательность, зависимости, владельцев и подтверждённый статус задач. Наличие промпта или каркаса модуля не означает выполнение.
+
+## Текущее состояние — 25.10.2026
+
+Статусы сверены с кодом и handoff-файлами в `main` на коммите `44b9050`. Выполнены **4 из 20 задач: A1, A2, B1, C1**. Из общих этапов закрыт **G0**; G1–G3 остаются открытыми. Работа в других ветках не считается завершённой в `main`.
+
+Проверка объединённого backend на этой точке: `pytest -q` — **274 passed**, `ruff check .` — **All checks passed** (Windows, Python 3.12.3). Эти проверки не заменяют открытые интеграционные и live-критерии G1–G3.
+
+| Выполнено | Результат | Подтверждение |
+|---|---|---|
+| A1 | Backend skeleton, DTO/Protocol, examples, OpenAPI, зафиксированные зависимости | `9698dd4`, [handoff агента 1](docs/handoffs/agent_1.md) |
+| G0 | Контракты 1.0 заморожены, исходная точка для параллельной работы | `c1b9c8a`, тег `g0`, [чеклист G0](#g0--контракты-заморожены) |
+| A2 | API services, TTL/LRU store, limiter, body limit, redaction | `e9d42f7`, [handoff агента 1](docs/handoffs/agent_1.md) |
+| B1 | URL/ref policy, шесть synthetic snapshots, fixture source | `1e22e93`, [handoff агента 2](docs/handoffs/agent_2.md) |
+| C1 | Детерминированный fallback-план, provider Protocol и fake для tests | `f4490c3`, [handoff агента 3](docs/handoffs/agent_3.md) |
+
+Следующие доступные задачи: **B2** (агент 2), **C2** (агент 3), **D1** (агент 4). Агент 1 переходит к A3 после B4 и C4. C1 предоставляет только план: `diagnose` ещё не реализован, live AI не подключён. Наличие fixture source и backend services само по себе не закрывает G1.
 
 ## 1. Роли
 
@@ -67,28 +83,28 @@ flowchart TD
 
 ## 4. Таблица работ
 
-| ID | Владелец | Работа | Входные условия | Передаёт |
-|---|---|---|---|---|
-| A1 | 1 | Skeleton, DTO, Protocol, примеры, OpenAPI | Прочитана архитектура, пустой/проверенный workspace | G0 commit и contract examples |
-| A2 | 1 | Routes, store, limiter, body limits, redaction | A1 | API со stubs и тесты ошибок |
-| A3 | 1 | Wiring source/scanner/intelligence | A2, B4, C4 | Рабочий backend для G1 |
-| A4 | 1 | CI, сборка, container, live smoke | G1, frontend build от D3 | Воспроизводимый запуск, результаты live |
-| A5 | 1 | Release review, runbook, итоговая матрица | B5, C5, D5 | G3 или точный список блокеров |
-| B1 | 2 | URL policy, synthetic snapshots, fixture source | G0 | Offline входы для всех |
-| B2 | 2 | GitHub metadata/commit/tree/blobs | B1 | Live source на том же Protocol |
-| B3 | 2 | Python/Node/readme parsers, evidence | B1; обычно после B2 | StaticAnalysis на fixtures |
-| B4 | 2 | Risks, budgets, graceful degradation | B2, B3 | Репозиторный модуль готов к wiring |
-| B5 | 2 | Live acceptance и handoff | G2 | Проверенные repo SHA/coverage и ограничения |
-| C1 | 3 | Rules fallback и fake provider | G0; fixtures B1 желательны, допускается contract example | PlanResult без внешнего AI |
-| C2 | 3 | OpenAI adapter, prompt, validation | C1 | AI план с fallback |
-| C3 | 3 | Лог: правила, prompt, доказательства | C1; redaction A2 для интеграции | DiagnosisResult |
-| C4 | 3 | Injection/invalid output/failure tests | C2, C3 | Готовый IntelligenceService |
-| C5 | 3 | Live AI acceptance и rubric | G2 | Честный отчёт о качестве |
-| D1 | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks |
-| D2 | 4 | Report, evidence, commands, export | D1 | Экран результата |
-| D3 | 4 | Diagnosis, retry/error states | D2 | Полный пользовательский flow на mocks |
-| D4 | 4 | Real-backend E2E и интеграция | G1 | Сквозной браузерный прогон |
-| D5 | 4 | Доступность, полировка, demo | G2 | Сценарий защиты и резервный путь |
+| ID | Статус в main | Владелец | Работа | Входные условия | Передаёт |
+|---|---|---|---|---|---|
+| A1 | ✅ Выполнено | 1 | Skeleton, DTO, Protocol, примеры, OpenAPI | Прочитана архитектура, пустой/проверенный workspace | G0 commit и contract examples |
+| A2 | ✅ Выполнено | 1 | Routes, store, limiter, body limits, redaction | A1 | API со stubs и тесты ошибок |
+| A3 | ⬜ Не закрыто | 1 | Wiring source/scanner/intelligence | A2, B4, C4 | Рабочий backend для G1 |
+| A4 | ⬜ Не закрыто | 1 | CI, сборка, container, live smoke | G1, frontend build от D3 | Воспроизводимый запуск, результаты live |
+| A5 | ⬜ Не закрыто | 1 | Release review, runbook, итоговая матрица | B5, C5, D5 | G3 или точный список блокеров |
+| B1 | ✅ Выполнено | 2 | URL policy, synthetic snapshots, fixture source | G0 | Offline входы для всех |
+| B2 | ⬜ Не закрыто | 2 | GitHub metadata/commit/tree/blobs | B1 | Live source на том же Protocol |
+| B3 | ⬜ Не закрыто | 2 | Python/Node/readme parsers, evidence | B1; обычно после B2 | StaticAnalysis на fixtures |
+| B4 | ⬜ Не закрыто | 2 | Risks, budgets, graceful degradation | B2, B3 | Репозиторный модуль готов к wiring |
+| B5 | ⬜ Не закрыто | 2 | Live acceptance и handoff | G2 | Проверенные repo SHA/coverage и ограничения |
+| C1 | ✅ Выполнено | 3 | Rules fallback и fake provider | G0; fixtures B1 желательны, допускается contract example | PlanResult без внешнего AI |
+| C2 | ⬜ Не закрыто | 3 | OpenAI adapter, prompt, validation | C1 | AI план с fallback |
+| C3 | ⬜ Не закрыто | 3 | Лог: правила, prompt, доказательства | C1; redaction A2 для интеграции | DiagnosisResult |
+| C4 | ⬜ Не закрыто | 3 | Injection/invalid output/failure tests | C2, C3 | Готовый IntelligenceService |
+| C5 | ⬜ Не закрыто | 3 | Live AI acceptance и rubric | G2 | Честный отчёт о качестве |
+| D1 | ⬜ Не закрыто | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks |
+| D2 | ⬜ Не закрыто | 4 | Report, evidence, commands, export | D1 | Экран результата |
+| D3 | ⬜ Не закрыто | 4 | Diagnosis, retry/error states | D2 | Полный пользовательский flow на mocks |
+| D4 | ⬜ Не закрыто | 4 | Real-backend E2E и интеграция | G1 | Сквозной браузерный прогон |
+| D5 | ⬜ Не закрыто | 4 | Доступность, полировка, demo | G2 | Сценарий защиты и резервный путь |
 
 ## 5. Gates — что проверяется перед следующей волной
 
@@ -111,6 +127,8 @@ flowchart TD
 
 Владелец: агент 1, UI проверяет агент 4.
 
+**Статус: не закрыт.** Реализованы отдельные компоненты A2/B1/C1; настоящий scanner, диагностика, UI и их сквозная интеграция ещё не подтверждены.
+
 - [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI.
 - [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI.
 - [ ] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен.
@@ -121,6 +139,8 @@ flowchart TD
 
 ### G2 — live-путь и сборка
 
+**Статус: не закрыт.** Live GitHub/AI и общая сборка не подтверждены.
+
 - [ ] Один Python и один npm public repo прочитаны live, результаты привязаны к SHA.
 - [ ] Реальная модель дала план и диагноз; модель/дата/статус записаны. Если нет доступа, live-AI часть gate остаётся blocked, хотя offline демо можно показывать с явной пометкой.
 - [ ] Имитированные GitHub rate limit и AI timeout обработаны в тестах.
@@ -129,6 +149,8 @@ flowchart TD
 - [ ] Container запускается и healthcheck проходит; если Docker недоступен на машине, статус «не проверен», не «passed».
 
 ### G3 — можно защищать
+
+**Статус: не закрыт.** Финальная приёмка и репетиция ещё не подтверждены.
 
 - [ ] Репетиция на заранее выбранном repo/ref.
 - [ ] Есть живой пример и независимый fixture fallback на случай сети.
@@ -205,14 +227,14 @@ flowchart TD
 
 **Волна 0 — каркас (работает только агент 1)**
 
-1. **A1** · агент 1 — skeleton, DTO, Protocol, examples, OpenAPI, `uv.lock`. Остальные агенты в это время только продумывают fixtures, тестовые логи и UX-состояния, без кода и собственных API.
-2. **G0** · агент 1 — контракты заморожены; всем переданы commit ID, команды установки, пути examples.
+1. ✅ **A1 — выполнено** · агент 1 — skeleton, DTO, Protocol, examples, OpenAPI, `uv.lock`. Остальные агенты в это время только продумывают fixtures, тестовые логи и UX-состояния, без кода и собственных API.
+2. ✅ **G0 — выполнено** · агент 1 — контракты заморожены; всем переданы commit ID, команды установки, пути examples.
 
 **Волна 1 — после G0, четыре агента параллельно**
 
-3. **A2** · агент 1 — routes, store, limiter, body limit, redaction. Вход: G0.
-4. **B1** · агент 2 — URL policy, synthetic repositories, fixture source. Вход: G0.
-5. **C1** · агент 3 — fallback-план и fake provider. Вход: G0 (fixtures B1 желательны, но не обязательны).
+3. ✅ **A2 — выполнено** · агент 1 — routes, store, limiter, body limit, redaction. Вход: G0.
+4. ✅ **B1 — выполнено** · агент 2 — URL policy, synthetic repositories, fixture source. Вход: G0.
+5. ✅ **C1 — выполнено** · агент 3 — fallback-план и fake provider. Вход: G0 (fixtures B1 желательны, но не обязательны).
 6. **D1** · агент 4 — каркас UI, generated types, MSW. Вход: G0.
 
 **Волна 2 — модули (внутри каждого агента последовательно)**
