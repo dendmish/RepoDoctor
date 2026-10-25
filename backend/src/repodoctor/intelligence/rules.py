@@ -21,7 +21,6 @@ from repodoctor.contracts.api import (
     Shell,
     Stack,
     TargetEnvironment,
-    collect_evidence_refs,
 )
 from repodoctor.contracts.domain import StaticAnalysis
 
@@ -44,6 +43,7 @@ _PYTHON_MANAGERS = {
 _NODE_MANAGERS = {PackageManager.npm, PackageManager.yarn, PackageManager.pnpm}
 _SAFE_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _MODULE = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", re.ASCII)
+MAX_RESOURCE_EVIDENCE = 10
 _PYTHON = re.compile(r"python(?:3(?:\.\d+)?)?")
 
 
@@ -546,7 +546,13 @@ class _Planner:
             self.questions.append(
                 "Нужна ли GPU и какие версии драйвера/CUDA предусмотрены проектом?"
             )
-        ids = sorted(collect_evidence_refs(self.scan.findings) & self.registry.keys())
+        # Representative sources in findings order, bounded so the step stays reviewable.
+        ids: list[str] = []
+        for finding in self.scan.findings:
+            ids.extend(
+                ref for ref in finding.evidence_ids if ref in self.registry and ref not in ids
+            )
+        ids = ids[:MAX_RESOURCE_EVIDENCE]
         self.step(
             "resources",
             "Подготовить окружение и внешние ресурсы",

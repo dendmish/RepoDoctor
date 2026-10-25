@@ -123,11 +123,15 @@ def diagnostic_commands(context: AnalysisContext) -> list[dict[str, str]]:
             )
         if roots[0].stack.value == "node":
             result.append({"text": "node --version", "cwd": cwd})
-    # Only manifest installation from our own rules, never pip install <import-name>.
+    # Every command of our own server-built plan (cd into the project root, runtime checks,
+    # manifest installation) may be repeated as a fix; never pip install <import-name>.
+    # Live GigaChat diagnoses were rejected for re-suggesting step_root/step_runtime commands.
     plan = build_fallback_plan(context.scan, target)
     for step in plan.steps:
-        if step.id == "step_install":
-            result.extend({"text": c.text, "cwd": c.cwd} for c in step.commands)
+        for command in step.commands:
+            entry = {"text": command.text, "cwd": command.cwd}
+            if entry not in result:
+                result.append(entry)
     return result
 
 

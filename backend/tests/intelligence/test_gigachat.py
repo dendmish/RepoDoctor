@@ -74,10 +74,13 @@ async def test_oauth_headers_schema_and_one_completion(monkeypatch, node_scan):
         if str(request.url) == OAUTH_URL:
             assert request.headers["Authorization"] == "Basic synthetic-authorization-key"
             assert UUID(request.headers["RqUID"]).version == 4
+            assert request.headers["User-Agent"].startswith("RepoDoctor/")
             assert parse_qs(request.content.decode()) == {"scope": ["GIGACHAT_API_PERS"]}
             return auth_response()
         assert str(request.url) == CHAT_URL
         assert request.headers["Authorization"] == "Bearer synthetic-access-token"
+        assert request.headers["User-Agent"].startswith("RepoDoctor/")
+        assert request.headers["X-Request-ID"]
         body = json.loads(request.content)
         assert body["model"] == "configured-gigachat-model"
         assert body["max_tokens"] == 1234

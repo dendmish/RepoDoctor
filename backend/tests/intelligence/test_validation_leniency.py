@@ -125,3 +125,39 @@ def test_negated_and_future_outcomes_are_not_execution_claims(node_scan):
         "Команды не были выполнены.",
     ]:
         _content({"description": text}, node_scan)
+
+
+def test_diagnosis_may_describe_what_the_user_ran_but_not_claim_a_fix(node_scan):
+    log = "npm ERR! enoent Could not read package.json"
+    _content(
+        {"explanation": "Команда npm ci запущена вне <repo>/website."}, node_scan, user_text=log
+    )
+    _content({"summary": "Команда была выполнена не в той папке."}, node_scan, user_text=log)
+    for claim in ["Проблема исправлена.", "Запуск проверен.", "Issue fixed."]:
+        try:
+            _content({"explanation": claim}, node_scan, user_text=log)
+        except ValueError as exc:
+            assert "unsupported_execution_claim" in str(exc)
+        else:
+            raise AssertionError(claim)
+    # Without a user log (run plans) "запущен" is still a forbidden execution claim.
+    try:
+        _content({"description": "Сервер запущен."}, node_scan)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("plan claim accepted")
+
+
+def test_baseline_plan_commands_are_allowed_in_diagnosis_fixes(node_scan):
+    from repodoctor.intelligence.diagnostics import diagnostic_commands
+    from repodoctor.intelligence.rules import build_fallback_plan
+
+    context = context_from(node_scan)
+    allowed = diagnostic_commands(context)
+    plan = build_fallback_plan(node_scan, context.response.target)
+    for step in plan.steps:
+        for command in step.commands:
+            assert {"text": command.text, "cwd": command.cwd} in allowed, step.id
+    assert not any("lsof" in item["text"] or "kill" in item["text"] for item in allowed)
+    assert len(allowed) == len({(item["text"], item["cwd"]) for item in allowed})

@@ -27,7 +27,8 @@ def extract_readme_hints(state: ScanState) -> None:
                 match = _ENV.match(line)
                 if match:
                     state.facts.env_var_names.append(match[1])
-                    state.signal("env", state.registry.file(file, number))
+                    if not state.signal_full("env"):
+                        state.signal("env", state.registry.file(file, number))
         in_fence = False
         for number, line in enumerate(file.content.splitlines(), 1):
             # Do not read node lock contents as instructions, nor arbitrary text as commands.
@@ -37,12 +38,14 @@ def extract_readme_hints(state: ScanState) -> None:
             resources = _RESOURCE.findall(line)
             for resource in resources:
                 state.facts.data_hints.append(resource)
-                state.signal("data", state.registry.file(file, number))
+                if not state.signal_full("data"):
+                    state.signal("data", state.registry.file(file, number))
             if re.search(r"\b(cuda|gpu|cudnn|nvidia)\b", line, re.IGNORECASE):
                 state.facts.gpu_hints.append(
                     "Упоминание GPU/CUDA; необходимость и совместимость не проверены."
                 )
-                state.signal("gpu", state.registry.file(file, number))
+                if not state.signal_full("gpu"):
+                    state.signal("gpu", state.registry.file(file, number))
             if not (readme and in_fence):
                 continue
             ids = [state.registry.file(file, number)]

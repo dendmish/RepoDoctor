@@ -44,6 +44,7 @@ _EXECUTED = re.compile(
     r"verified|fixed|executed)\b",
     re.I,
 )
+_USER_RAN = re.compile(r"запущен[аоы]?|выполнен[аоы]?|executed", re.I)
 _PROSE_COMMAND = re.compile(
     r"\b(?:curl|wget|iwr|invoke-webrequest)\b[^\n]*\|\s*(?:bash|sh|zsh|iex)|"
     r"\b(?:sudo\s+|rm\s+-[a-z]*[rf]|rmdir\s+/s|del\s+/s|"
@@ -85,6 +86,10 @@ def _content(data: object, scan: StaticAnalysis, field: str = "", *, user_text: 
         if field in {"verification", "assumptions", "questions", "text"}:
             return
         for claim in _EXECUTED.finditer(data):
+            # In a diagnosis the pasted log proves the *user* ran something ("команда
+            # запущена вне <repo>/website"); claims that we fixed/verified stay forbidden.
+            if user_text and _USER_RAN.fullmatch(claim.group(0)):
+                continue
             if not _NOT_EXECUTED_PREFIX.search(data[: claim.start()]):
                 raise OutputRejected("unsupported_execution_claim")
         for runtime, version in _RUNTIME_VERSION.findall(data):
@@ -137,27 +142,45 @@ def _links(data: object, scan: StaticAnalysis) -> None:
     walk(data)
 
 
-def _bounded(data: object) -> None:
+MAX_LIST_ITEMS = 40
+
+
+def _bounded(data: object, field: str = "") -> None:
+    """Size limits. `evidence_ids` lengths are checked by their owners (_steps, findings,
+    causes) because a server-built baseline step may legitimately cite more sources."""
     if isinstance(data, str):
         if len(data) > 3000 or "\x00" in data:
             raise OutputRejected("text_limit")
     elif isinstance(data, list):
-        if len(data) > 40:
+        if len(data) > MAX_LIST_ITEMS and field != "evidence_ids":
             raise OutputRejected("list_limit")
         for value in data:
             _bounded(value)
     elif isinstance(data, dict):
-        for value in data.values():
-            _bounded(value)
+        for name, value in data.items():
+            _bounded(value, name)
 
 
-def _steps(steps: list[RunStep], evidence: list[Evidence], target: TargetEnvironment) -> None:
+def _evidence_limit(ids: list[str], allowed: int = MAX_LIST_ITEMS) -> None:
+    if len(ids) > max(allowed, MAX_LIST_ITEMS):
+        raise OutputRejected("list_limit")
+
+
+def _steps(
+    steps: list[RunStep],
+    evidence: list[Evidence],
+    target: TargetEnvironment,
+    baseline_sizes: dict[str, int] | None = None,
+) -> None:
+    """`baseline_sizes` maps a baseline step id to its evidence count, so an exact copy of the
+    server-built plan is never rejected for citing the sources the server itself chose."""
     if len(steps) > 12 or len({step.id for step in steps}) != len(steps):
         raise OutputRejected("steps")
     check_evidence_registry(evidence, collect_evidence_refs(steps))
     for step in steps:
         if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", step.id):
             raise OutputRejected("step_id")
+        _evidence_limit(step.evidence_ids, (baseline_sizes or {}).get(step.id, 0))
         if not step.verification.strip() or not (step.evidence_ids or step.assumptions):
             raise OutputRejected("ungrounded_step")
         for command in step.commands:
@@ -198,6 +221,8 @@ def _accept_findings(
             reason = "findings_limit"
         elif not finding.title.strip() or not finding.evidence_ids:
             reason = "ungrounded_finding"
+        elif len(finding.evidence_ids) > MAX_LIST_ITEMS:
+            reason = "list_limit"
         elif not set(finding.evidence_ids) <= registry:
             reason = "unknown_evidence"
         elif _normalized(finding.title) in known:
@@ -244,8 +269,9 @@ def validate_plan(
         raise OutputRejected("list_limit")
     _content(plan_data, scan)
     _links(plan_data, scan)
-    _steps(result.run_plan.steps, scan.evidence, target)
     baseline = build_fallback_plan(scan, target)
+    sizes = {step.id: len(step.evidence_ids) for step in baseline.steps}
+    _steps(result.run_plan.steps, scan.evidence, target, sizes)
     if _command_keys(result.run_plan.steps) != _command_keys(baseline.steps):
         # Only server-confirmed commands, in prerequisite order. No partial plan repair.
         raise OutputRejected("unsupported_command_or_order")
@@ -290,6 +316,7 @@ def _check_cause(
         raise
     except ValueError as exc:
         raise OutputRejected("unknown_evidence") from exc
+    _evidence_limit(cause.evidence_ids)
     if not any(ref.startswith("log_") for ref in cause.evidence_ids):
         raise OutputRejected("missing_log_evidence")
     try:

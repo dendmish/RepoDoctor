@@ -17,6 +17,7 @@ from time import time as utc_time
 from httpx import AsyncClient, RequestError, TimeoutException
 from pydantic import SecretStr, ValidationError
 
+from repodoctor import __version__
 from repodoctor.config import Settings
 from repodoctor.contracts.api import TargetEnvironment
 from repodoctor.contracts.domain import AnalysisContext, SanitizedLog, StaticAnalysis
@@ -30,12 +31,14 @@ from repodoctor.intelligence.provider import (
     diagnosis_payload,
     plan_payload,
 )
-from repodoctor.observability import log_event
+from repodoctor.observability import log_event, request_id_var
 
 OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 CHAT_URL = "https://api.giga.chat/v1/chat/completions"
 MODELS_URL = "https://api.giga.chat/v1/models"
 MAX_RESPONSE_BYTES = 256 * 1024
+# GigaChat API docs recommend a client User-Agent to avoid authorization errors.
+USER_AGENT = f"RepoDoctor/{__version__}"
 BUNDLED_CA = Path(__file__).resolve().parents[1] / "certificates" / "russian_trusted_root_ca.pem"
 
 
@@ -98,6 +101,7 @@ class GigaChatProvider:
                     "Authorization": "Basic " + self._settings.gigachat_auth_key.get_secret_value(),
                     "RqUID": str(uuid.uuid4()),
                     "Accept": "application/json",
+                    "User-Agent": USER_AGENT,
                 },
                 data={"scope": self._settings.gigachat_scope.value},
             )
@@ -122,7 +126,13 @@ class GigaChatProvider:
                     document = await self._json(
                         client,
                         CHAT_URL,
-                        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/json",
+                            "User-Agent": USER_AGENT,
+                            # Correlates our logs with GigaChat support; no user data inside.
+                            "X-Request-ID": request_id_var.get() or str(uuid.uuid4()),
+                        },
                         json={
                             "model": self.model,
                             "stream": False,

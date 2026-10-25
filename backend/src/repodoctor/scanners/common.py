@@ -9,6 +9,10 @@ from repodoctor.contracts.api import Finding, RepositoryFacts
 from repodoctor.contracts.domain import RepositorySnapshot, TextFile
 from repodoctor.scanners.evidence import EvidenceRegistry, stable_id
 
+# Representative examples per risk signal (env/data/gpu). A hardware table in website code
+# once produced 91 GPU lines, which bloated findings and broke the AI plan's list limits.
+MAX_SIGNAL_EVIDENCE = 5
+
 
 def root_of(path: str) -> str:
     return str(PurePosixPath(path).parent)
@@ -28,8 +32,14 @@ class ScanState:
     signals: dict[str, list[str]] = field(default_factory=dict)
     explicit_managers: dict[tuple[str, str], str] = field(default_factory=dict)
 
+    def signal_full(self, name: str) -> bool:
+        """True once a signal has enough examples; callers then skip registering evidence."""
+        return len(self.signals.get(name, [])) >= MAX_SIGNAL_EVIDENCE
+
     def signal(self, name: str, evidence_id: str) -> None:
-        self.signals.setdefault(name, []).append(evidence_id)
+        ids = self.signals.setdefault(name, [])
+        if evidence_id not in ids and len(ids) < MAX_SIGNAL_EVIDENCE:
+            ids.append(evidence_id)
 
     def issue(
         self,
