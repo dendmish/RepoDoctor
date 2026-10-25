@@ -26,9 +26,26 @@ from repodoctor.intelligence.provider import (
     ProviderError,
 )
 from repodoctor.intelligence.rules import build_fallback_plan
-from repodoctor.intelligence.validation import model_causes, validate_diagnosis, validate_plan
+from repodoctor.intelligence.validation import (
+    OutputRejected,
+    model_causes,
+    validate_diagnosis,
+    validate_plan,
+)
+from repodoctor.observability import log_event
 
 FALLBACK_VERSION = "fallback-v1"
+
+
+def _rule(exc: ValueError) -> str:
+    """Fixed validator code only; never model text or IDs supplied by the model."""
+    if isinstance(exc, OutputRejected):
+        return str(exc)
+    return "schema_or_evidence"
+
+
+def _codes(reasons: list[str]) -> str:
+    return ", ".join(sorted(set(reasons)))
 
 
 class IntelligenceServiceImpl:
@@ -54,17 +71,26 @@ class IntelligenceServiceImpl:
         if use_ai and self.provider is not None:
             try:
                 output = await self.provider.generate_plan(scan, target)
-                output, findings = validate_plan(output, scan, target)
+                output, findings, dropped = validate_plan(output, scan, target)
                 payload = build_context(
                     scan, target, baseline=build_fallback_plan(scan, target).model_dump(mode="json")
                 )
                 # Also restrict fake/other providers to IDs actually visible within the budget.
                 visible = {item["id"] for item in payload["evidence"]}
-                if not collect_evidence_refs(output.run_plan, findings) <= visible:
-                    raise ValueError("evidence_outside_context")
+                if not collect_evidence_refs(output.run_plan) <= visible:
+                    raise OutputRejected("evidence_outside_context")
+                outside = [f for f in findings if not set(f.evidence_ids) <= visible]
+                dropped += ["evidence_outside_context"] * len(outside)
+                findings = [f for f in findings if f not in outside]
                 check_evidence_registry(
                     scan.evidence, collect_evidence_refs(output.run_plan, findings)
                 )
+                if dropped:
+                    log_event("ai_findings_dropped", count=len(dropped), reasons=_codes(dropped))
+                    warnings.append(
+                        f"Отброшено AI-наблюдений без подтверждения: {len(dropped)} "
+                        f"({_codes(dropped)})."
+                    )
                 if payload["truncated"]:
                     warnings.append("Контекст AI сокращён; часть данных не передавалась модели.")
                 return PlanResult(
@@ -77,12 +103,14 @@ class IntelligenceServiceImpl:
                     warnings=warnings,
                 )
             except ProviderError as exc:
-                reason = exc.reason
+                reason, rule = exc.reason, None
             except TimeoutError:
-                reason = "timeout"
-            except ValueError:
-                reason = "invalid_output"
-            warnings.append(f"AI-план недоступен ({reason}); использованы локальные правила.")
+                reason, rule = "timeout", None
+            except ValueError as exc:
+                reason, rule = "invalid_output", _rule(exc)
+            log_event("ai_plan_fallback", reason=reason, rule=rule or "-")
+            detail = f"{reason}: {rule}" if rule else reason
+            warnings.append(f"AI-план недоступен ({detail}); использованы локальные правила.")
         return PlanResult(
             run_plan=build_fallback_plan(scan, target),
             additional_findings=[],
@@ -124,7 +152,18 @@ class IntelligenceServiceImpl:
                 validation_evidence = [
                     ev for ev in evidence if ev.id in visible or ev.id.startswith("log_")
                 ]
-                output = validate_diagnosis(output, context, validation_evidence)
+                output, dropped = validate_diagnosis(
+                    output,
+                    context,
+                    validation_evidence,
+                    user_text="\n".join(filter(None, [log.text, command])),
+                )
+                if dropped:
+                    log_event("ai_causes_dropped", count=len(dropped), reasons=_codes(dropped))
+                    warnings.append(
+                        f"Отброшено AI-причин без подтверждения: {len(dropped)} "
+                        f"({_codes(dropped)})."
+                    )
                 if payload["truncated"]:
                     warnings.append("Контекст AI сокращён; часть данных не передавалась модели.")
                 return DiagnosisResult(
@@ -138,13 +177,15 @@ class IntelligenceServiceImpl:
                     warnings=warnings,
                 )
             except ProviderError as exc:
-                reason = exc.reason
+                reason, rule = exc.reason, None
             except TimeoutError:
-                reason = "timeout"
-            except ValueError:
-                reason = "invalid_output"
+                reason, rule = "timeout", None
+            except ValueError as exc:
+                reason, rule = "invalid_output", _rule(exc)
+            log_event("ai_diagnosis_fallback", reason=reason, rule=rule or "-")
+            detail = f"{reason}: {rule}" if rule else reason
             warnings.append(
-                f"AI-диагностика недоступна ({reason}); использованы локальные правила."
+                f"AI-диагностика недоступна ({detail}); использованы локальные правила."
             )
         causes, questions = local_diagnosis(context, log, prepared)
         return DiagnosisResult(

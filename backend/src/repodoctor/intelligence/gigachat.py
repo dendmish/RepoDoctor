@@ -30,6 +30,7 @@ from repodoctor.intelligence.provider import (
     diagnosis_payload,
     plan_payload,
 )
+from repodoctor.observability import log_event
 
 OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 CHAT_URL = "https://api.giga.chat/v1/chat/completions"
@@ -39,8 +40,8 @@ BUNDLED_CA = Path(__file__).resolve().parents[1] / "certificates" / "russian_tru
 
 
 class GigaChatProvider:
-    plan_prompt_version = "analysis-gigachat-v1"
-    diagnosis_prompt_version = "diagnosis-gigachat-v1"
+    plan_prompt_version = "analysis-gigachat-v2"
+    diagnosis_prompt_version = "diagnosis-gigachat-v2"
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
@@ -63,11 +64,18 @@ class GigaChatProvider:
 
     async def _json(self, client: AsyncClient, url: str, *, method: str = "POST", **kwargs) -> dict:
         async with client.stream(method, url, **kwargs) as response:
-            if response.status_code in {401, 403}:
+            status = response.status_code
+            if status != 200:
+                # Status and endpoint only: upstream bodies may echo prompts or credentials.
+                log_event("gigachat_http_error", endpoint=url.rsplit("/", 1)[-1], status=status)
+            if status in {401, 403}:
                 raise ProviderError("authentication_failed")
-            if response.status_code == 429:
+            if status == 429:
                 raise ProviderError("rate_limited")
-            if response.status_code != 200:
+            if status in {400, 404, 413, 422}:
+                # Bad model name, unsupported schema or oversized request: not an outage.
+                raise ProviderError("request_rejected")
+            if status != 200:
                 raise ProviderError("provider_unavailable")
             body = bytearray()
             async for chunk in response.aiter_bytes():
@@ -181,7 +189,9 @@ class GigaChatProvider:
     ) -> ModelPlanOutput:
         if not self._settings.gigachat_configured:
             raise ProviderError("ai_not_configured")
-        return await self._request("analysis_gigachat.txt", plan_payload(scan, target), ModelPlanOutput)
+        return await self._request(
+            "analysis_gigachat.txt", plan_payload(scan, target), ModelPlanOutput
+        )
 
     async def generate_diagnosis(
         self, context: AnalysisContext, log: SanitizedLog, command: str | None

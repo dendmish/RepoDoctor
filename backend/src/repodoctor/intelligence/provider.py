@@ -80,6 +80,7 @@ class ProviderError(Exception):
             "context_too_large",
             "authentication_failed",
             "tls_error",
+            "request_rejected",
         }
         self.reason = reason if reason in allowed else "provider_unavailable"
         super().__init__(self.reason)

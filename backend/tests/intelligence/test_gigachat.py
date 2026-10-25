@@ -142,6 +142,9 @@ async def test_token_cache_refresh_and_auth_scoping(monkeypatch, node_scan, expi
         ("403", "authentication_failed"),
         ("429", "rate_limited"),
         ("500", "provider_unavailable"),
+        ("400", "request_rejected"),
+        ("404", "request_rejected"),
+        ("422", "request_rejected"),
         ("redirect", "provider_unavailable"),
         ("timeout", "timeout"),
         ("network", "provider_unavailable"),
@@ -367,7 +370,7 @@ def test_default_gigachat_api_plan_and_diagnosis(monkeypatch):
         analysis = AnalysisResponse.model_validate(response.json())
         assert analysis.generation.mode == "ai"
         assert analysis.generation.model == "configured-gigachat-model"
-        assert analysis.generation.prompt_version == "analysis-gigachat-v1"
+        assert analysis.generation.prompt_version == "analysis-gigachat-v2"
         response = client.post(
             f"/api/v1/analyses/{analysis.analysis_id}/diagnoses",
             json={"log": "EADDRINUSE", "use_ai": True},

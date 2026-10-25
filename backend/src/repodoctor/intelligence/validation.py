@@ -17,7 +17,12 @@ from repodoctor.contracts.api import (
     collect_evidence_refs,
 )
 from repodoctor.contracts.domain import AnalysisContext, StaticAnalysis
-from repodoctor.intelligence.provider import ModelDiagnosisOutput, ModelPlanOutput
+from repodoctor.intelligence.provider import (
+    ModelCauseOutput,
+    ModelDiagnosisOutput,
+    ModelFindingOutput,
+    ModelPlanOutput,
+)
 from repodoctor.intelligence.rules import build_fallback_plan
 from repodoctor.security.redaction import redact_text
 
@@ -47,14 +52,30 @@ _PROSE_COMMAND = re.compile(
 )
 
 
-def _content(data: object, scan: StaticAnalysis, field: str = "") -> None:
-    """Reject concrete unsupported claims; this deliberately does not prove prose true."""
+# Negations and future/expected outcomes are not claims that something was already executed.
+_NOT_EXECUTED_PREFIX = re.compile(
+    r"(?:\b(?:не|not|never)\s+(?:(?:был[аои]?|были)\s+)?"
+    r"|\b(?:не\s+)?(?:будет|будут|должен\s+быть|должна\s+быть|должно\s+быть|должны\s+быть)\s+)$",
+    re.I,
+)
+_FILE_NAME = re.compile(r"[\w./-]+\.(?:py|js|mjs|cjs|ts)\b")
+_RUNTIME_VERSION = re.compile(
+    r"\b(python|node(?:\.js)?)\s*(?:версии?\s*)?[:=<>~^ ]*(\d+(?:\.\d+){0,2})", re.I
+)
+
+
+def _content(data: object, scan: StaticAnalysis, field: str = "", *, user_text: str = "") -> None:
+    """Reject concrete unsupported claims; this deliberately does not prove prose true.
+
+    `user_text` is the processed log/command the user pasted: file names and runtime versions
+    quoted from it are grounded facts in a diagnosis, not invented repository claims.
+    """
     if isinstance(data, list):
         for item in data:
-            _content(item, scan, field)
+            _content(item, scan, field, user_text=user_text)
     elif isinstance(data, dict):
         for name, item in data.items():
-            _content(item, scan, name)
+            _content(item, scan, name, user_text=user_text)
     elif isinstance(data, str):
         if redact_text(data)[0] != data:
             raise OutputRejected("secret_in_output")
@@ -64,22 +85,16 @@ def _content(data: object, scan: StaticAnalysis, field: str = "") -> None:
         if field in {"verification", "assumptions", "questions", "text"}:
             return
         for claim in _EXECUTED.finditer(data):
-            if not re.search(
-                r"\b(?:не|not|never)\s+(?:(?:был[аои]?|были)\s+)?$", data[: claim.start()], re.I
-            ):
+            if not _NOT_EXECUTED_PREFIX.search(data[: claim.start()]):
                 raise OutputRejected("unsupported_execution_claim")
-        for runtime, version in re.findall(
-            r"\b(python|node(?:\.js)?)\s*(?:версии?\s*)?[:=<>~^ ]*"
-            r"(\d+(?:\.\d+){0,2})",
-            data,
-            re.I,
-        ):
+        for runtime, version in _RUNTIME_VERSION.findall(data):
             ecosystem = "node" if runtime.lower().startswith("node") else "python"
             known = [
                 hint.constraint
                 for hint in scan.facts.runtime_hints
                 if hint.runtime.value == ecosystem
             ]
+            known.append(user_text)
             if not any(
                 re.search(rf"(?<!\d){re.escape(version)}(?!\d)", constraint) for constraint in known
             ):
@@ -87,8 +102,9 @@ def _content(data: object, scan: StaticAnalysis, field: str = "") -> None:
         paths = {ev.path for ev in scan.evidence if ev.path} | {
             file.path for file in scan.selected_files
         }
+        paths |= {path.removeprefix("./") for path in _FILE_NAME.findall(user_text)}
         names = paths | {path.rsplit("/", 1)[-1] for path in paths}
-        for path in re.findall(r"[\w./-]+\.(?:py|js|mjs|cjs|ts)\b", data):
+        for path in _FILE_NAME.findall(data):
             if path.lower() != "node.js" and path.removeprefix("./") not in names:
                 raise OutputRejected("unsupported_entrypoint_claim")
 
@@ -158,14 +174,76 @@ def _command_keys(steps: list[RunStep]) -> list[tuple[str, str, str]]:
     return [(c.text, c.cwd, c.shell.value) for step in steps for c in step.commands]
 
 
+def _normalized(text: str) -> str:
+    return re.sub(r"[\W_]+", " ", text).strip().lower()
+
+
+def _accept_findings(
+    raw: list[ModelFindingOutput], scan: StaticAnalysis
+) -> tuple[list[Finding], list[str]]:
+    """Keep only new, grounded and policy-clean AI findings; drop the rest one by one.
+
+    Models often echo the static findings they were shown (sometimes with empty
+    evidence_ids). An echo or one ungrounded note must not discard a valid run plan.
+    """
+    registry = {ev.id for ev in scan.evidence}
+    known = {_normalized(f.title) for f in scan.findings}
+    known |= {_normalized(f.rule_id) for f in scan.findings}
+    existing_ids = {finding.id for finding in scan.findings}
+    accepted: list[Finding] = []
+    dropped: list[str] = []
+    for finding in raw:
+        reason = None
+        if len(accepted) >= 10:
+            reason = "findings_limit"
+        elif not finding.title.strip() or not finding.evidence_ids:
+            reason = "ungrounded_finding"
+        elif not set(finding.evidence_ids) <= registry:
+            reason = "unknown_evidence"
+        elif _normalized(finding.title) in known:
+            reason = "duplicate_static_finding"
+        else:
+            try:
+                data = finding.model_dump()
+                _bounded(data)
+                _content(data, scan)
+                _links(data, scan)
+            except OutputRejected as exc:
+                reason = str(exc)
+        if reason is not None:
+            dropped.append(reason)
+            continue
+        known.add(_normalized(finding.title))
+        identifier = f"ai_finding_{len(accepted) + 1}"
+        while identifier in existing_ids:
+            identifier = "ai_" + identifier
+        existing_ids.add(identifier)
+        accepted.append(
+            Finding(
+                id=identifier,
+                rule_id="AI_ADDITIONAL_FINDING",
+                origin=Origin.ai,
+                **finding.model_dump(),
+            )
+        )
+    return accepted, dropped
+
+
 def validate_plan(
     output: ModelPlanOutput, scan: StaticAnalysis, target: TargetEnvironment
-) -> tuple[ModelPlanOutput, list[Finding]]:
+) -> tuple[ModelPlanOutput, list[Finding], list[str]]:
+    """Strict for the run plan (whole-result rejection); lenient per AI finding.
+
+    Returns the plan, accepted findings and the reasons of dropped findings.
+    """
     # Reparse even typed providers: model_copy(update=...) bypasses Pydantic validation.
     result = ModelPlanOutput.model_validate(output.model_dump())
-    _bounded(result.model_dump())
-    _content(result.model_dump(), scan)
-    _links(result.model_dump(), scan)
+    plan_data = result.run_plan.model_dump()
+    _bounded(plan_data)
+    if len(result.additional_findings) > 40:
+        raise OutputRejected("list_limit")
+    _content(plan_data, scan)
+    _links(plan_data, scan)
     _steps(result.run_plan.steps, scan.evidence, target)
     baseline = build_fallback_plan(scan, target)
     if _command_keys(result.run_plan.steps) != _command_keys(baseline.steps):
@@ -188,38 +266,68 @@ def validate_plan(
         for command in step.commands:
             if not expected[(command.text, command.cwd)] <= set(step.evidence_ids):
                 raise OutputRejected("missing_command_sources")
-    if len(result.additional_findings) > 10:
-        raise OutputRejected("findings_limit")
-    findings = []
-    existing_ids = {finding.id for finding in scan.findings}
-    for i, finding in enumerate(result.additional_findings, 1):
-        if not finding.title.strip() or not finding.evidence_ids:
-            raise OutputRejected("ungrounded_finding")
-        check_evidence_registry(scan.evidence, set(finding.evidence_ids))
-        identifier = f"ai_finding_{i}"
-        while identifier in existing_ids:
-            identifier = "ai_" + identifier
-        existing_ids.add(identifier)
-        findings.append(
-            Finding(
-                id=identifier,
-                rule_id="AI_ADDITIONAL_FINDING",
-                origin=Origin.ai,
-                **finding.model_dump(),
-            )
-        )
-    return result, findings
+    findings, dropped = _accept_findings(result.additional_findings, scan)
+    result.additional_findings = []
+    return result, findings, dropped
+
+
+def _check_cause(
+    cause: ModelCauseOutput,
+    context: AnalysisContext,
+    evidence: list[Evidence],
+    allowed: list[dict[str, str]],
+    install_sources: dict[tuple[str, str], set[str]],
+    user_text: str,
+) -> None:
+    if not cause.title.strip() or not cause.verification.strip():
+        raise OutputRejected("empty_cause")
+    data = cause.model_dump()
+    _content(data, context.scan, user_text=user_text)
+    _links(data, context.scan)
+    try:
+        check_evidence_registry(evidence, set(cause.evidence_ids))
+    except OutputRejected:
+        raise
+    except ValueError as exc:
+        raise OutputRejected("unknown_evidence") from exc
+    if not any(ref.startswith("log_") for ref in cause.evidence_ids):
+        raise OutputRejected("missing_log_evidence")
+    try:
+        _steps(cause.fixes, evidence, context.response.target)
+    except OutputRejected:
+        raise
+    except ValueError as exc:
+        raise OutputRejected("unknown_evidence") from exc
+    for step in cause.fixes:
+        for command in step.commands:
+            if {"text": command.text, "cwd": command.cwd} not in allowed:
+                raise OutputRejected("unsupported_diagnostic_command")
+            if not install_sources.get((command.text, command.cwd), set()) <= set(
+                step.evidence_ids
+            ):
+                raise OutputRejected("missing_install_sources")
 
 
 def validate_diagnosis(
-    output: ModelDiagnosisOutput, context: AnalysisContext, evidence: list[Evidence]
-) -> ModelDiagnosisOutput:
+    output: ModelDiagnosisOutput,
+    context: AnalysisContext,
+    evidence: list[Evidence],
+    *,
+    user_text: str = "",
+) -> tuple[ModelDiagnosisOutput, list[str]]:
+    """Summary/questions are checked strictly; each cause is accepted or dropped on its own.
+
+    If the model proposed causes and none survives, the whole result is rejected so the
+    deterministic rules answer instead of an empty AI diagnosis. Returns the reasons of
+    dropped causes.
+    """
     from repodoctor.intelligence.diagnostics import diagnostic_commands
 
     result = ModelDiagnosisOutput.model_validate(output.model_dump())
     _bounded(result.model_dump())
-    _content(result.model_dump(), context.scan)
-    _links(result.model_dump(), context.scan)
+    shared = {"summary": result.summary, "questions": result.questions}
+    _content(shared, context.scan, user_text=user_text)
+    _links(shared, context.scan)
     if len(result.causes) > 5 or (not result.causes and not result.questions):
         raise OutputRejected("causes")
     allowed = diagnostic_commands(context)
@@ -229,22 +337,18 @@ def validate_diagnosis(
         if step.id == "step_install"
         for command in step.commands
     }
+    kept, dropped = [], []
     for cause in result.causes:
-        if not cause.title.strip() or not cause.verification.strip():
-            raise OutputRejected("empty_cause")
-        check_evidence_registry(evidence, set(cause.evidence_ids))
-        if not any(ref.startswith("log_") for ref in cause.evidence_ids):
-            raise OutputRejected("missing_log_evidence")
-        _steps(cause.fixes, evidence, context.response.target)
-        for step in cause.fixes:
-            for command in step.commands:
-                if {"text": command.text, "cwd": command.cwd} not in allowed:
-                    raise OutputRejected("unsupported_diagnostic_command")
-                if not install_sources.get((command.text, command.cwd), set()) <= set(
-                    step.evidence_ids
-                ):
-                    raise OutputRejected("missing_install_sources")
-    return result
+        try:
+            _check_cause(cause, context, evidence, allowed, install_sources, user_text)
+        except OutputRejected as exc:
+            dropped.append(str(exc))
+        else:
+            kept.append(cause)
+    if result.causes and not kept:
+        raise OutputRejected(dropped[0])
+    result.causes = kept
+    return result, dropped
 
 
 def model_causes(output: ModelDiagnosisOutput) -> list[DiagnosisCause]:
