@@ -9,7 +9,7 @@ services:
       - "8501:8501"
     environment:
       # Ollama крутится на хосте: берём его модели напрямую
-      OLLAMA_URL: http://host.docker.internal:11434
+      OLLAMA_URL: http://host.docker.internal:11435
       # sandbox, общий с хостом (docker-демон строит образы из этого каталога)
       REPODOCTOR_SANDBOX: /sandbox
     extra_hosts:
