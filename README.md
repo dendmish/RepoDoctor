@@ -70,7 +70,7 @@ ollama pull qwen2.5-coder:7b
 после мержа PR доступен любой:
 
 ```bash
-docker pull ghcr.io/dendmish/repodoctor:latest
+docker pull ghcr.io/dendmish/repodoctor:mvp-flat
 
 # приложению нужны два «моста» с хостом:
 #  · Ollama (модели тяжёлые, качать в контейнер каждый раз нет смысла на демо)
