@@ -121,13 +121,17 @@ flowchart TD
 
 Владелец: агент 1, UI проверяет агент 4.
 
-- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI.
-- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI.
-- [ ] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен.
-- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic.
-- [ ] Неподдерживаемый fixture URL не возвращает чужой demo report.
-- [ ] Markdown export работает, сырой лог и секреты не попадают в него.
-- [ ] HTTP/API/browser tests проходят без GitHub и AI.
+**Статус: частично выполнен; G1 не закрыт.** Сверено 25.10.2026 по `main`, коммит `44b9050`. Галочки ниже подтверждают конкретные условия; сквозной offline-путь ещё не проверен.
+
+- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI. **Частично:** B1 fixture source и C1 fallback готовы; нужны настоящий scanner, подключение модулей в A3 и UI.
+- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI. **Частично:** A2 sanitizer и API-оболочка диагностики готовы; `IntelligenceServiceImpl.diagnose` ещё бросает `NotImplementedError` (C3), UI отсутствует.
+- [x] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен. `Settings` запрещает `USE_DEV_STUBS=true` при `APP_ENV=production`; C1 строит план через настоящие rules. Подключение fallback к production API остаётся задачей A3.
+- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic. **Частично:** C1 unit-тесты подтверждают shell/cwd и целостность evidence IDs, fixture-результаты имеют synthetic-предупреждение; открытие evidence в UI ещё не проверялось.
+- [x] Неподдерживаемый fixture URL не возвращает чужой demo report. B1 `test_unknown_repository_does_not_fall_back` проверяет `RepositoryNotFoundError`; HTTP-тест `test_dev_stub_rejects_unknown_repository` проверяет 404 `REPOSITORY_NOT_FOUND` у dev stub. Проверка с настоящим source через production wiring ещё предстоит в A3.
+- [ ] Markdown export работает, сырой лог и секреты не попадают в него. **Не выполнено:** frontend exporter и его проверки ещё не реализованы (D2/D3).
+- [ ] HTTP/API/browser tests проходят без GitHub и AI. **Частично:** на объединённом backend прошли 274 offline-теста, включая HTTP/API; frontend/browser E2E ещё отсутствуют.
+
+Основания для отметок: `backend/tests/platform/test_app.py::test_dev_stubs_forbidden_in_production`, `backend/tests/platform/test_app.py::test_dev_stub_rejects_unknown_repository`, `backend/tests/repository/test_fixture_source.py::test_unknown_repository_does_not_fall_back`, `backend/tests/intelligence/test_rules.py`, `backend/tests/intelligence/test_examples.py`. Результаты общего backend-прогона приведены в разделе 4; модульные проверки не заменяют прохождение G1 в браузере.
 
 ### G2 — live-путь и сборка
 
