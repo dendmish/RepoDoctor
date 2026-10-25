@@ -1,5 +1,61 @@
 # Handoff — агент 1 (Platform / Integration)
 
+## A3 — wiring модулей, выполнено в ветке feat/c4-a3-hardening-wiring, 25.10.2026
+
+База: `d04094c`, контракт 1.0; B4 и C2/C3 в main, C4 завершён в этой же ветке.
+Production backend wiring выполнен. **G1 не закрыт:** report/evidence/export D2 и
+diagnosis UI D3 отсутствуют, поэтому browser analyze → report → log → diagnosis →
+export пока невозможно принять. Владельцы оставшегося UI — агент 4, D2/D3; browser
+real-backend acceptance — D4 после G1. A4/C5 и live acceptance не выполнялись.
+
+Изменения: `main.py`, `export_openapi.py`, `tests/platform/{test_app,test_wiring}.py`,
+`tests/smoke_offline.py`, `backend/README.md`, комментарий `.env.example`, handoffs/roadmap.
+Public DTO, OpenAPI content, generated TS и зависимости не изменены.
+
+- `create_app()` подключает реальный fixture source по умолчанию, RepositoryAnalyzer,
+  IntelligenceServiceImpl и общий MemoryAnalysisStore/OperationLimiter. Явные handlers
+  и ports имеют приоритет; legacy dev stubs остаются только явной development-опцией,
+  запрещены Settings в production и не импортируются стандартным production-путём.
+- REPOSITORY_MODE=live создаёт GitHubRepositorySource в lifespan с общим fixed-host
+  AsyncClient. На shutdown и при ошибке startup клиент закрывается, state очищается.
+  Ошибки GitHub не заменяют источник fixture, даже если URL есть в fixture index.
+- OpenAIProvider создаётся только при обоих key/model, сам клиент остаётся ленивым.
+  Без конфигурации — fallback, при use_ai=false нет вызовов OpenAI. Секреты только в
+  Settings/headers, не prompt/response/health.
+- 18 production API комбинаций (шесть fixtures × три shell) проверяют настоящие
+  source → scanner → fallback → store → sanitizer → diagnosis. Проверены schema/IDs,
+  timestamps, modes, coverage, shell/review, dependency и missing env finding,
+  потребность уточнения неизвестного entrypoint и неизменность store после лога.
+- Дополнительно: invalid URL/unknown fixture/ref/expired analysis, production без
+  import stubs, missing key/model, обе AI HTTP-операции через SDK MockTransport,
+  GitHub success/404/500/rate limit на transport mock, shared client/lifecycle и
+  приоритет явно внедрённого source. GitHub/AI transport mocks — **не live acceptance**.
+- Экспорт OpenAPI отделён от runtime-конвейера: не требует fixtures, клиентов или
+  startup, перегенерация дала нулевой diff. Frontend-клиент обновлять не требуется.
+
+Проверки из `backend` (Windows, Python 3.12.15):
+
+```powershell
+.venv/Scripts/python.exe -m pytest -q
+# 503 passed.
+.venv/Scripts/ruff.exe check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# All checks passed!
+.venv/Scripts/ruff.exe format --check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
+# 72 files already formatted.
+.venv/Scripts/python.exe -m repodoctor.export_openapi ../contracts/openapi.json
+# OK; git diff --exit-code -- ../contracts/openapi.json — no diff.
+.venv/Scripts/python.exe tests/smoke_offline.py
+# Настоящий uvicorn/localhost: Python analysis 201 → diagnosis 200;
+# Node analysis 201 → diagnosis 200; invalid URL 422; expired analysis 404.
+# source=fixture, mode=fallback, dev stubs выключены, внешних API-вызовов нет.
+```
+
+Smoke-скрипт выбирает свободный localhost-порт, явно очищает credentials child process,
+останавливает сервер в finally и не запускает код анализируемого проекта. Обычный
+pytest его не собирает; инструкция ручного запуска — [backend/README.md](../../backend/README.md).
+HTTP smoke проверяет backend, а не отсутствующий UI. G1 требует завершить D2/D3 и
+пройти browser flow с выключенным MSW; G2 требует отдельные live/сборочные проверки.
+
 ## A1 — каркас и контрактный baseline
 
 ```text

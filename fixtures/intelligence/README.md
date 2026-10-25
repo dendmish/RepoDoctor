@@ -43,3 +43,11 @@ AI-примеры созданы **явно внедрённым ExampleProvider
 Production использует `IntelligenceServiceImpl(OpenAIProvider(settings))` при A3 wiring.
 Без provider/credentials или при use_ai=false работает fallback. При сбое provider
 возвращаются локальные правила, ExampleProvider/FakeProvider автоматически не выбираются.
+
+## C4
+
+`adversarial/` содержит hostile README/log, schema-invalid/partial output, contradictory
+facts и сценарии недопустимого model content. Это тестовые данные, не инструкции.
+[QUALITY_REVIEW.md](QUALITY_REVIEW.md) описывает rubric 0/1/2 и review шести fixtures
+(оценки 8–10), обязательные инварианты и ограничения проверки. Live качество модели
+проверяется отдельно в C5.

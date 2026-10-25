@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from repodoctor.contracts.api import TargetEnvironment
+from repodoctor.contracts.api import RunPlan, TargetEnvironment, collect_evidence_refs
 from repodoctor.contracts.domain import StaticAnalysis
 from repodoctor.security.redaction import redact_text
 
@@ -30,14 +30,28 @@ def build_context(
     scan: StaticAnalysis, target: TargetEnvironment, *, baseline: dict | None = None
 ) -> dict:
     """Pack facts with their evidence atomically; never leave dangling model-input refs."""
+    fact_fields = (
+        "project_roots",
+        "runtime_hints",
+        "package_managers",
+        "entrypoints",
+        "dependencies",
+        "env_var_names",
+        "data_hints",
+        "gpu_hints",
+    )
+    registry = {ev.id: ev for ev in scan.evidence}
+    included = collect_evidence_refs(RunPlan.model_validate(baseline)) if baseline else set()
+    if not included <= registry.keys():
+        raise ValueError("baseline_evidence_missing")
     data = _redacted(
         {
             "target": target.model_dump(mode="json"),
             "repository": scan.repository.model_dump(mode="json"),
             "source_mode": scan.source_mode.value,
-            "facts": {"stack": scan.facts.stack.value},
+            "facts": {"stack": scan.facts.stack.value, **{name: [] for name in fact_fields}},
             "findings": [],
-            "evidence": [],
+            "evidence": [registry[ref].model_dump(mode="json") for ref in sorted(included)],
             "excerpts": [],
             "limitations": [],
             "truncated": False,
@@ -49,8 +63,6 @@ def build_context(
         from repodoctor.intelligence.provider import ProviderError
 
         raise ProviderError("context_too_large")
-    registry = {ev.id: ev for ev in scan.evidence}
-    included: set[str] = set()
     omitted = False
 
     def add(collection: list, item: object, refs: list[str] = ()) -> None:
@@ -73,17 +85,7 @@ def build_context(
 
     for limitation in scan.coverage.limitations:
         add(data["limitations"], limitation)
-    for name in (
-        "project_roots",
-        "runtime_hints",
-        "package_managers",
-        "entrypoints",
-        "dependencies",
-        "env_var_names",
-        "data_hints",
-        "gpu_hints",
-    ):
-        data["facts"][name] = []
+    for name in fact_fields:
         for item in getattr(scan.facts, name):
             value = item.model_dump(mode="json") if hasattr(item, "model_dump") else item
             add(data["facts"][name], value, getattr(item, "evidence_ids", []))

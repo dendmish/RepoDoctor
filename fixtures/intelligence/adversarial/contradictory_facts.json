@@ -1,0 +1,6 @@
+{
+  "runtime": "python",
+  "constraints": [">=3.12", "<3.10"],
+  "expected": "needs_input",
+  "question": "Подтвердите совместимую версию runtime по пересечению требований."
+}

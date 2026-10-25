@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+from repodoctor.api.dependencies import _UnwiredService
 from repodoctor.config import PROJECT_ROOT, Settings
 from repodoctor.main import create_app
 
@@ -18,7 +19,11 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "contracts" / "openapi.json"
 def render_openapi() -> str:
     # Schema does not depend on env; defaults keep the output reproducible.
     settings = Settings(_env_file=None, use_dev_stubs=False, openai_api_key=None)
-    schema = create_app(settings).openapi()
+    # Schema export must not need a fixture library, clients or startup resources.
+    placeholder = _UnwiredService()
+    schema = create_app(
+        settings, analysis_service=placeholder, diagnosis_service=placeholder
+    ).openapi()
     return json.dumps(schema, indent=2, ensure_ascii=False) + "\n"
 
 

@@ -1,0 +1,15 @@
+[
+  {"id":"invented_evidence","operation":"plan","mutation":"invented_evidence"},
+  {"id":"curl_pipe_shell","operation":"plan","mutation":"curl_pipe_shell"},
+  {"id":"wrong_shell","operation":"plan","mutation":"wrong_shell"},
+  {"id":"bogus_app_py","operation":"plan","mutation":"bogus_app_py"},
+  {"id":"too_many_steps","operation":"plan","mutation":"too_many_steps"},
+  {"id":"false_verified","operation":"plan","mutation":"false_verified"},
+  {"id":"dangerous_prose","operation":"plan","mutation":"dangerous_prose"},
+  {"id":"invented_runtime_prose","operation":"plan","mutation":"invented_runtime_prose"},
+  {"id":"invented_entrypoint_prose","operation":"plan","mutation":"invented_entrypoint_prose"},
+  {"id":"secret_in_output","operation":"plan","mutation":"secret_in_output"},
+  {"id":"empty_diagnosis","operation":"diagnosis","mutation":"empty_diagnosis"},
+  {"id":"false_fixed","operation":"diagnosis","mutation":"false_fixed"},
+  {"id":"diagnosis_invented_evidence","operation":"diagnosis","mutation":"invented_evidence"}
+]

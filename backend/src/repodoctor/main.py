@@ -25,6 +25,10 @@ from repodoctor.contracts.ports import (
     RepositorySource,
     StaticAnalyzer,
 )
+from repodoctor.intelligence.provider import OpenAIProvider
+from repodoctor.intelligence.service import IntelligenceServiceImpl
+from repodoctor.repository.source import create_repository_source
+from repodoctor.scanners.analyzer import RepositoryAnalyzer
 from repodoctor.security.limits import (
     MAX_BODY_BYTES,
     BodyLimitMiddleware,
@@ -59,7 +63,7 @@ def create_github_client(settings: Settings) -> httpx.AsyncClient:
 
 @dataclass(frozen=True)
 class Ports:
-    """Injected module implementations; A2/A3 compose them into the services."""
+    """Resolved module implementations, including explicit test/application overrides."""
 
     source: RepositorySource | None = None
     analyzer: StaticAnalyzer | None = None
@@ -82,10 +86,22 @@ def create_app(
         store = MemoryAnalysisStore(settings.store_ttl_seconds, settings.store_max_items)
     limiter = OperationLimiter(settings.max_concurrent_operations)
 
-    # Real services from injected ports (A3 passes the module implementations here).
-    if analysis_service is None and None not in (source, analyzer, intelligence):
-        analysis_service = AnalysisService(
-            source=source,
+    # Explicit handlers/ports win; dev stubs remain opt-in and cannot run in production.
+    need_real_modules = not settings.use_dev_stubs and (
+        analysis_service is None or diagnosis_service is None
+    )
+    if need_real_modules:
+        if analyzer is None:
+            analyzer = RepositoryAnalyzer()
+        if intelligence is None:
+            provider = OpenAIProvider(settings) if settings.ai_configured else None
+            intelligence = IntelligenceServiceImpl(provider)
+        if source is None and analysis_service is None and settings.repository_mode == "fixture":
+            source = create_repository_source(settings)
+
+    def compose_analysis(selected_source: RepositorySource) -> AnalysisService:
+        return AnalysisService(
+            source=selected_source,
             analyzer=analyzer,
             intelligence=intelligence,
             store=store,
@@ -93,6 +109,9 @@ def create_app(
             ttl_seconds=settings.store_ttl_seconds,
             timeout_seconds=settings.analysis_timeout_seconds,
         )
+
+    if analysis_service is None and None not in (source, analyzer, intelligence):
+        analysis_service = compose_analysis(source)
     if diagnosis_service is None and intelligence is not None:
         diagnosis_service = DiagnosisService(
             intelligence=intelligence,
@@ -118,11 +137,21 @@ def create_app(
             settings.repository_mode,
             settings.ai_configured,
         )
-        # One shared client for the GitHub source (agent 2): fixed host, no redirects.
+        # Live source is composed only within its shared client's lifetime.
         async with create_github_client(settings) as client:
             app.state.github_client = client
-            yield
-        app.state.github_client = None
+            auto_live = need_real_modules and source is None and analysis_service is None
+            try:
+                if auto_live:
+                    live_source = create_repository_source(settings, client)
+                    app.state.ports = Ports(live_source, analyzer, intelligence, store)
+                    app.state.analysis_service = compose_analysis(live_source)
+                yield
+            finally:
+                app.state.github_client = None
+                if auto_live:
+                    app.state.analysis_service = None
+                    app.state.ports = Ports(None, analyzer, intelligence, store)
 
     app = FastAPI(
         title="RepoDoctor API",
