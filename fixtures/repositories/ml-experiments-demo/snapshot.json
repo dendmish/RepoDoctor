@@ -1,0 +1,124 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "ml-experiments-demo",
+    "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo",
+    "default_branch": "main",
+    "resolved_commit": "095efb4a6a783da9a065828bcdbb048fb54b4054",
+    "description": "SYNTHETIC fixture: monorepo с Python backend и Node frontend"
+  },
+  "source_mode": "fixture",
+  "tree": [
+    {
+      "path": "backend",
+      "type": "tree",
+      "mode": "040000",
+      "sha": "a67c53a0bc4d579442acadb0256fb9323ed6e207",
+      "size": null
+    },
+    {
+      "path": "backend/backend_demo",
+      "type": "tree",
+      "mode": "040000",
+      "sha": "f08c39ccfe137557dceb6778f52306e893ad6659",
+      "size": null
+    },
+    {
+      "path": "backend/backend_demo/__main__.py",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "d79a098e347e2d9b0994b84ea33bc1e9fed43fc1",
+      "size": 85
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "01df47f77d8c0299505638b398cc381ce562b6da",
+      "size": 117
+    },
+    {
+      "path": "backend/README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "6e35dc11c18e24eb4f44f6a78d3b4c5450ea6b78",
+      "size": 70
+    },
+    {
+      "path": "frontend",
+      "type": "tree",
+      "mode": "040000",
+      "sha": "1aaa10450451d9842ea8320d8e417925b7592824",
+      "size": null
+    },
+    {
+      "path": "frontend/package.json",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "8d39d0b1e608377f1ae6f21f64e95cea271a6a05",
+      "size": 185
+    },
+    {
+      "path": "frontend/README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "7db4f2705131c17d313633343f2230ce0328b9e6",
+      "size": 48
+    },
+    {
+      "path": "README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "ef70c2b5a9ec29c63a1b7adb0dab20f52453022e",
+      "size": 150
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/backend_demo/__main__.py",
+      "content": "\"\"\"Synthetic entrypoint: do not execute during analysis.\"\"\"\nprint(\"backend fixture\")\n",
+      "size_bytes": 85,
+      "sha": "d79a098e347e2d9b0994b84ea33bc1e9fed43fc1"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "content": "[project]\nname = \"backend-demo\"\nversion = \"0.1.0\"\nrequires-python = \">=3.12,<3.13\"\ndependencies = [\"fastapi>=0.115\"]\n",
+      "size_bytes": 117,
+      "sha": "01df47f77d8c0299505638b398cc381ce562b6da"
+    },
+    {
+      "path": "backend/README.md",
+      "content": "# Backend\n\n```bash\npython -m pip install .\npython -m backend_demo\n```\n",
+      "size_bytes": 70,
+      "sha": "6e35dc11c18e24eb4f44f6a78d3b4c5450ea6b78"
+    },
+    {
+      "path": "frontend/package.json",
+      "content": "{\n  \"name\": \"synthetic-frontend\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"vite\"\n  },\n  \"engines\": {\n    \"node\": \">=22.12.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^7.0.0\"\n  }\n}\n",
+      "size_bytes": 185,
+      "sha": "8d39d0b1e608377f1ae6f21f64e95cea271a6a05"
+    },
+    {
+      "path": "frontend/README.md",
+      "content": "# Frontend\n\n```bash\nnpm install\nnpm run dev\n```\n",
+      "size_bytes": 48,
+      "sha": "7db4f2705131c17d313633343f2230ce0328b9e6"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic mixed monorepo\n\nChoose backend or frontend before running; they have separate environments.\nSee backend/README.md and frontend/README.md.\n",
+      "size_bytes": 150,
+      "sha": "ef70c2b5a9ec29c63a1b7adb0dab20f52453022e"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 9,
+    "files_selected": 6,
+    "files_read": 6,
+    "bytes_read": 655,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "partial-tree-demo",
+    "url": "https://github.com/repodoctor-fixtures/partial-tree-demo",
+    "default_branch": "main",
+    "resolved_commit": "c4d6b3a656626264f9db00ca92e982de9a4a2f0a",
+    "description": "SYNTHETIC fixture: неполное дерево и внешние данные без доказательства отсутствия"
+  },
+  "source_mode": "fixture",
+  "tree": [
+    {
+      "path": ".python-version",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "e4fba2183587225f216eeada4c78dfab6b2e65f5",
+      "size": 5
+    },
+    {
+      "path": "README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "767e77035cfd7164278854f9163d4437d8b89910",
+      "size": 283
+    },
+    {
+      "path": "requirements.txt",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "657e282eebed1bd4e3338fb34aa18603a0d22419",
+      "size": 11
+    }
+  ],
+  "files": [
+    {
+      "path": ".python-version",
+      "content": "3.12\n",
+      "size_bytes": 5,
+      "sha": "e4fba2183587225f216eeada4c78dfab6b2e65f5"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic partial research repository\n\nThe observed tree is intentionally incomplete.\nObtain data/training.csv and checkpoints/model.bin from the project maintainer.\nCUDA support depends on the selected environment; GPU is not confirmed.\nNo supported run entrypoint is documented.\n",
+      "size_bytes": 283,
+      "sha": "767e77035cfd7164278854f9163d4437d8b89910"
+    },
+    {
+      "path": "requirements.txt",
+      "content": "torch>=2.2\n",
+      "size_bytes": 11,
+      "sha": "657e282eebed1bd4e3338fb34aa18603a0d22419"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "tree_entries_seen": 3,
+    "files_selected": 3,
+    "files_read": 3,
+    "bytes_read": 299,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub.",
+      "Синтетическое truncated tree: неизвестно, есть ли dataset в необозримой части дерева."
+    ]
+  }
+}
