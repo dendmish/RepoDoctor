@@ -40,12 +40,12 @@ async def test_missing_provider_does_not_construct_network_clients(python_scan, 
     assert any("fixture" in warning for warning in result.warnings)
 
 
-async def test_c1_does_not_publish_unvalidated_provider_output(python_scan):
+async def test_invalid_provider_output_uses_whole_fallback(python_scan):
     provider = FakeProvider(ProviderError("invalid_output"))
     result = await IntelligenceServiceImpl(provider).build_plan(python_scan, TARGET, use_ai=True)
-    assert result.generation.reason == "ai_validation_unavailable"
+    assert result.generation.reason == "invalid_output"
     assert result.generation.mode == "fallback"
-    assert not provider.calls
+    assert len(provider.calls) == 1
 
 
 async def test_fake_is_typed_deterministic_and_records_calls(python_scan):
