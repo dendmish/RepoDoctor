@@ -80,9 +80,9 @@ Callback имеет сигнатуру `(str) -> tuple[str, int]`. Вызов п
 
 `RepositorySnapshot` ещё не содержит evidence. Будущий B3 создаёт его из строк `TextFile` и дерева; в `source_mode=fixture` поля evidence URL должны быть `null`, без фиктивных GitHub-ссылок.
 
-## Граница B1
+## Граница B1 и продолжение B2–B4
 
-Реализованы URL/ref helpers и fixture source. Scanner, risk rules, GitHub source, AI и подключение HTTP-конвейера относятся к другим задачам. Поле `expected` в index описывает контрольные ожидания, оно не утверждает, что B3/B4 уже выполнены. Контракты G0, API examples, зависимости и lock-файлы B1 не меняет.
+В B1 реализованы URL/ref helpers и fixture source. В B2–B4 добавлены GitHub source, scanner и risk rules; общий контракт G0, OpenAPI, зависимости и lock-файлы не менялись. AI и подключение полного HTTP-конвейера остаются задачами других ролей. Поле `expected` в index описывает контрольные ожидания; scanner tests проверяют их на всех шести снимках.
 
 Проверки из `backend`:
 
@@ -91,3 +91,32 @@ uv run pytest tests/repository -q
 uv run ruff check src/repodoctor/repository tests/repository
 uv run ruff format --check src/repodoctor/repository tests/repository
 ```
+
+## Source/scanner после B2–B4
+
+```python
+from repodoctor.repository.source import create_repository_source
+from repodoctor.scanners.analyzer import RepositoryAnalyzer
+
+# Для fixture client не нужен. Для live передать shared httpx.AsyncClient платформы.
+source = create_repository_source(settings, client=None)
+scan = RepositoryAnalyzer().analyze(await source.fetch(request))
+```
+
+`create_repository_source` выбирает строго заданный `settings.repository_mode`: ошибка live не переключает приложение на fixtures. Клиент и его закрытие принадлежат платформе; source использует только `https://api.github.com`, не следует redirect/download_url и читает blobs по SHA фиксированного commit.
+
+`RepositoryLimits` в `repository/selection.py` содержит нормативные budgets. Избыточный tree, пропущенный blob, malformed manifest или неполные данные отражаются в `coverage`/findings; scanner не делает отрицательных выводов о наличии файлов при partial coverage. Python resolver, npm semver resolver, скачивание датасетов и запуск чужого кода отсутствуют.
+
+Каждая папка fixture теперь содержит `scan.json` — настоящий `StaticAnalysis` с facts, findings, evidence и очищенными selected_files. Это внутренний DTO для агентов 1/3/4, не готовый HTTP-ответ и не live-анализ GitHub. Во всех этих примерах `source_mode=fixture`, evidence URL равны `null`.
+
+Перегенерация из `backend`:
+
+```powershell
+uv run python ../fixtures/repositories/export_scans.py
+```
+
+Тест `test_exported_static_examples_are_current` проверяет, что эти шесть файлов соответствуют scanner, а не устаревшим сохранённым результатам. Номера строк относятся к очищенному тексту; blob SHA и `size_bytes` — к содержимому до дополнительной redaction.
+
+Правила выбора manager: явный `packageManager`/tool-section имеет приоритет; однозначный README workflow — следующий; затем lock markers. В разных roots или ecosystems менеджеры не конфликтуют. Несколько разных Node managers в README без явного выбора остаются неоднозначными. Неизвестный явный manager не заменяется npm. Poetry поддержан ограниченно: строковые зависимости/runtime; сложные таблицы/groups обозначаются как unsupported.
+
+Исходники entrypoints берутся только из ограниченной второй выборки путей, упомянутых в README/manifests; Python module/file entrypoints должны присутствовать в наблюдаемом tree. Произвольные команды README не исполняются и не становятся инструкциями самому RepoDoctor.

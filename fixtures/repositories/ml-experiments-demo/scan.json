@@ -1,0 +1,247 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "ml-experiments-demo",
+    "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo",
+    "default_branch": "main",
+    "resolved_commit": "095efb4a6a783da9a065828bcdbb048fb54b4054",
+    "description": "SYNTHETIC fixture: monorepo с Python backend и Node frontend"
+  },
+  "source_mode": "fixture",
+  "facts": {
+    "stack": "mixed",
+    "project_roots": [
+      {
+        "path": "backend",
+        "stack": "python",
+        "manifest_paths": [
+          "backend/pyproject.toml"
+        ]
+      },
+      {
+        "path": "frontend",
+        "stack": "node",
+        "manifest_paths": [
+          "frontend/package.json"
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "fastapi",
+        "constraint": ">=0.115",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "backend/pyproject.toml",
+        "evidence_ids": [
+          "file_c79012e14830588e5c1b"
+        ]
+      },
+      {
+        "name": "vite",
+        "constraint": "^7.0.0",
+        "ecosystem": "node",
+        "kind": "dev",
+        "manifest_path": "frontend/package.json",
+        "evidence_ids": [
+          "file_d102a662b93773ad948f"
+        ]
+      }
+    ],
+    "runtime_hints": [
+      {
+        "runtime": "node",
+        "constraint": ">=22.12.0",
+        "evidence_ids": [
+          "file_438526e2cd27e4cd4c21"
+        ]
+      },
+      {
+        "runtime": "python",
+        "constraint": ">=3.12,<3.13",
+        "evidence_ids": [
+          "file_18a44cb1ce524855bc4b"
+        ]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "npm",
+        "root": "frontend",
+        "evidence_ids": [
+          "file_f76de88211f2824ffb31"
+        ]
+      },
+      {
+        "name": "pip",
+        "root": "backend",
+        "evidence_ids": [
+          "file_2bd7e7dac81c6baacedf"
+        ]
+      }
+    ],
+    "entrypoints": [
+      {
+        "root": "frontend",
+        "command_hint": "npm run dev",
+        "kind": "script",
+        "evidence_ids": [
+          "file_d102a662b93773ad948f"
+        ]
+      },
+      {
+        "root": "backend",
+        "command_hint": "python -m backend_demo",
+        "kind": "module",
+        "evidence_ids": [
+          "file_c78bdb4b3840ab5e8e25",
+          "tree_6165b57e08b3539e220a"
+        ]
+      }
+    ],
+    "env_var_names": [],
+    "data_hints": [],
+    "gpu_hints": []
+  },
+  "findings": [],
+  "evidence": [
+    {
+      "id": "file_18a44cb1ce524855bc4b",
+      "source": "file",
+      "path": "backend/pyproject.toml",
+      "line_start": 4,
+      "line_end": 4,
+      "excerpt": "requires-python = \">=3.12,<3.13\"",
+      "url": null
+    },
+    {
+      "id": "file_2bd7e7dac81c6baacedf",
+      "source": "file",
+      "path": "backend/pyproject.toml",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "[project]",
+      "url": null
+    },
+    {
+      "id": "file_438526e2cd27e4cd4c21",
+      "source": "file",
+      "path": "frontend/package.json",
+      "line_start": 8,
+      "line_end": 8,
+      "excerpt": "    \"node\": \">=22.12.0\"",
+      "url": null
+    },
+    {
+      "id": "file_a2cd3c9dfbac1e79a71c",
+      "source": "file",
+      "path": "frontend/README.md",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "npm run dev",
+      "url": null
+    },
+    {
+      "id": "file_c78bdb4b3840ab5e8e25",
+      "source": "file",
+      "path": "backend/README.md",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "python -m backend_demo",
+      "url": null
+    },
+    {
+      "id": "file_c79012e14830588e5c1b",
+      "source": "file",
+      "path": "backend/pyproject.toml",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "dependencies = [\"fastapi>=0.115\"]",
+      "url": null
+    },
+    {
+      "id": "file_cf36b4aca692ac8f84ab",
+      "source": "file",
+      "path": "backend/README.md",
+      "line_start": 4,
+      "line_end": 4,
+      "excerpt": "python -m pip install .",
+      "url": null
+    },
+    {
+      "id": "file_d102a662b93773ad948f",
+      "source": "file",
+      "path": "frontend/package.json",
+      "line_start": 5,
+      "line_end": 5,
+      "excerpt": "    \"dev\": \"vite\"",
+      "url": null
+    },
+    {
+      "id": "file_f76de88211f2824ffb31",
+      "source": "file",
+      "path": "frontend/README.md",
+      "line_start": 4,
+      "line_end": 4,
+      "excerpt": "npm install",
+      "url": null
+    },
+    {
+      "id": "tree_6165b57e08b3539e220a",
+      "source": "tree",
+      "path": "backend/backend_demo/__main__.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Наблюдаемая запись дерева: backend/backend_demo/__main__.py (blob, mode 100644).",
+      "url": null
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 9,
+    "files_selected": 6,
+    "files_read": 6,
+    "bytes_read": 655,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  },
+  "selected_files": [
+    {
+      "path": "README.md",
+      "content": "# Synthetic mixed monorepo\n\nChoose backend or frontend before running; they have separate environments.\nSee backend/README.md and frontend/README.md.\n",
+      "size_bytes": 150,
+      "sha": "ef70c2b5a9ec29c63a1b7adb0dab20f52453022e"
+    },
+    {
+      "path": "backend/README.md",
+      "content": "# Backend\n\n```bash\npython -m pip install .\npython -m backend_demo\n```\n",
+      "size_bytes": 70,
+      "sha": "6e35dc11c18e24eb4f44f6a78d3b4c5450ea6b78"
+    },
+    {
+      "path": "backend/backend_demo/__main__.py",
+      "content": "\"\"\"Synthetic entrypoint: do not execute during analysis.\"\"\"\nprint(\"backend fixture\")\n",
+      "size_bytes": 85,
+      "sha": "d79a098e347e2d9b0994b84ea33bc1e9fed43fc1"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "content": "[project]\nname = \"backend-demo\"\nversion = \"0.1.0\"\nrequires-python = \">=3.12,<3.13\"\ndependencies = [\"fastapi>=0.115\"]\n",
+      "size_bytes": 117,
+      "sha": "01df47f77d8c0299505638b398cc381ce562b6da"
+    },
+    {
+      "path": "frontend/README.md",
+      "content": "# Frontend\n\n```bash\nnpm install\nnpm run dev\n```\n",
+      "size_bytes": 48,
+      "sha": "7db4f2705131c17d313633343f2230ce0328b9e6"
+    },
+    {
+      "path": "frontend/package.json",
+      "content": "{\n  \"name\": \"synthetic-frontend\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"vite\"\n  },\n  \"engines\": {\n    \"node\": \">=22.12.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^7.0.0\"\n  }\n}\n",
+      "size_bytes": 185,
+      "sha": "8d39d0b1e608377f1ae6f21f64e95cea271a6a05"
+    }
+  ]
+}

@@ -8,6 +8,18 @@ import pytest
 
 from repodoctor.contracts.api import AnalysisRequest
 
+_ASYNC_SEND = httpx.AsyncClient.send
+
+
+@pytest.fixture
+def mock_transport_http(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def send(client: httpx.AsyncClient, request: httpx.Request, **kwargs):
+        assert isinstance(client._transport, httpx.MockTransport)
+        assert request.url.host == "api.github.com"
+        return await _ASYNC_SEND(client, request, **kwargs)
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", send)
+
 
 @pytest.fixture(autouse=True)
 def offline_only(monkeypatch: pytest.MonkeyPatch) -> None:

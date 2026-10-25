@@ -10,9 +10,10 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
+import httpx
 from pydantic import Field, ValidationError
 
-from repodoctor.config import PROJECT_ROOT
+from repodoctor.config import PROJECT_ROOT, Settings
 from repodoctor.contracts.api import AnalysisRequest, ContractModel, SourceMode
 from repodoctor.contracts.domain import (
     RefNotFoundError,
@@ -20,7 +21,9 @@ from repodoctor.contracts.domain import (
     RepositoryNotFoundError,
     RepositorySnapshot,
 )
+from repodoctor.contracts.ports import RepositorySource
 from repodoctor.repository.url import normalize_ref, normalize_repo_url
+from repodoctor.security.redaction import redact_text
 
 Redactor = Callable[[str], tuple[str, int]]
 _SYNTHETIC_NOTICE = "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
@@ -143,3 +146,20 @@ class FixtureRepositorySource:
             dict.fromkeys([_SYNTHETIC_NOTICE, *snapshot.coverage.limitations])
         )
         return snapshot
+
+
+def create_repository_source(
+    settings: Settings, client: httpx.AsyncClient | None = None
+) -> RepositorySource:
+    """Factory for the composition root; client lifecycle remains owned by the platform."""
+    if settings.repository_mode == "fixture":
+        return FixtureRepositorySource(settings.fixtures_dir, redactor=redact_text)
+    if client is None:
+        raise ValueError("Live repository mode requires the platform's shared AsyncClient")
+    from repodoctor.repository.github import GitHubRepositorySource
+
+    return GitHubRepositorySource(
+        client,
+        token=settings.github_token.get_secret_value() if settings.github_token else None,
+        api_version=settings.github_api_version,
+    )
