@@ -5,3 +5,4 @@ logs/
 .DS_Store
 backend/.venv/
 node_modules/
+_sandbox/
