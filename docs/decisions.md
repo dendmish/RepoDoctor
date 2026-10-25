@@ -123,3 +123,36 @@ create_app(settings=None, *, source=None, analyzer=None, intelligence=None, stor
 - `ml-experiments-demo`
 
 Рекомендация агенту 2: использовать те же URL в fixture index, чтобы fixture-ответы и examples совпадали по смыслу.
+
+## D-012. Сборка сервисов в A2 (25.10.2026)
+
+- `create_app` собирает `AnalysisService` из `source + analyzer + intelligence`, а `DiagnosisService` из `intelligence`. Хранилище (`MemoryAnalysisStore`) и `OperationLimiter` общие.
+- Приоритет: явно переданные сервисы → сервисы из портов → dev stubs → «не подключено» (500).
+- Store не передан — создаётся из Settings (TTL 1800 s, 30 записей, 512 KiB на контекст).
+- Сканер синхронный, поэтому вызывается через `asyncio.to_thread`.
+- Evidence и findings объединяются по ID; при совпадении побеждает статическая запись.
+- Невалидный результат модуля (например, ссылка на несуществующий evidence) даёт безопасный 500 и ничего не сохраняет. Это дефект владельца модуля.
+
+## D-013. Контекст больше 512 KiB
+
+Если сериализованный `AnalysisContext` превышает 512 KiB, из `scan.selected_files` убираются файлы с конца списка, пока контекст не поместится. Одна и та же пометка добавляется:
+
+- в `warnings` ответа;
+- в `coverage.limitations` ответа и сохранённого scan.
+
+Так ответ и store остаются согласованными. Если контекст не помещается даже без файлов, возвращается 500.
+
+## D-014. Лимит тела запроса и дочитывание
+
+`BodyLimitMiddleware` считает реально полученные байты, поэтому chunked-запросы тоже ограничены. Content-Length тоже проверяется. Поведение при превышении 128 KiB:
+
+- тело размером до 1 MiB дочитывается и выбрасывается без буферизации, после чего отправляется 413;
+- если заявлен Content-Length больше 1 MiB, 413 отправляется сразу.
+
+Причина: проверка на uvicorn под Windows показала, что ответ до окончания загрузки вызывает сброс соединения, и клиент не получает JSON 413.
+
+## D-015. request_id и логи
+
+- `RequestContextMiddleware` создаёт `request_id` для каждого HTTP-запроса и добавляет заголовок `X-Request-ID` к любому ответу. Этот же ID попадает в `ErrorResponse.request_id`.
+- Логи (`repodoctor.observability.log_event`) содержат только request_id, фазу, длительность, счётчики и статусы. Тела запросов, логи пользователя, промпты и ключи не пишутся.
+- В lifespan создаётся общий `httpx.AsyncClient` для GitHub (`app.state.github_client`): `https://api.github.com`, `follow_redirects=False`, таймауты 5/10 s. Токен в клиент не добавляется — это решает источник агента 2.
