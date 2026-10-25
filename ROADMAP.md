@@ -21,7 +21,7 @@
 | B2 | GitHub metadata/commit/tree/blobs, fixed host/SHA, bounded HTTP и redaction | [handoff агента 2](docs/handoffs/agent_2.md), transport tests и live smoke |
 | B3 | Python/Node/README parsers, project roots, реестр evidence и шесть StaticAnalysis examples | [handoff агента 2](docs/handoffs/agent_2.md), scanner/fixture tests |
 | B4 | Десять risk rules, budgets, partial coverage и совместимость с fallback C1 | [handoff агента 2](docs/handoffs/agent_2.md), regression tests |
-| C1 | Детерминированный fallback-план, provider Protocol и fake для tests | `f4490c3`, [handoff агента 3](docs/handoffs/agent_3.md) |
+| C1 | Детерминированный fallback-план, provider Protocol и fake для tests | `f4490c3`, [PR №4](https://github.com/dendmish/RepoDoctor/pull/4), [handoff агента 3](docs/handoffs/agent_3.md); исторические статусы ветки C1 согласованы с актуальным main в [PR №7](https://github.com/dendmish/RepoDoctor/pull/7) |
 | C2 | OpenAI Responses adapter, prompts, bounded context, валидация плана и fallback | `3b0155f`, [PR №6](https://github.com/dendmish/RepoDoctor/pull/6), [handoff агента 3](docs/handoffs/agent_3.md); SDK transport mocks, без live AI |
 | C3 | Диагностика обработанного лога, log evidence, локальные правила и AI fallback | `3b0155f`, `cc20da2`, [PR №6](https://github.com/dendmish/RepoDoctor/pull/6), [handoff агента 3](docs/handoffs/agent_3.md); unit и HTTP DI tests |
 | D1 | React/TypeScript/Vite shell, generated API types, fetch client, формы и MSW | `afefc3b`, [PR №5](https://github.com/dendmish/RepoDoctor/pull/5), [handoff агента 4](docs/handoffs/agent_4.md) |
