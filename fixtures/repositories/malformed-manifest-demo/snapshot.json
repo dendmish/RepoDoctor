@@ -1,0 +1,64 @@
+{
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "malformed-manifest-demo",
+    "url": "https://github.com/repodoctor-fixtures/malformed-manifest-demo",
+    "default_branch": "main",
+    "resolved_commit": "9a997caa16c911dd884685120c0adc3eeb4cd625",
+    "description": "SYNTHETIC fixture: некорректные JSON и TOML при читаемом README"
+  },
+  "source_mode": "fixture",
+  "tree": [
+    {
+      "path": "package.json",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "b5b6bd6b5210efc49d2ce1f565c4db798435c51c",
+      "size": 43
+    },
+    {
+      "path": "pyproject.toml",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "7b8e16275ca79aa8c62e64576d4dd24002378ee2",
+      "size": 42
+    },
+    {
+      "path": "README.md",
+      "type": "blob",
+      "mode": "100644",
+      "sha": "7ff87996bc6091f5ca7e7c0a970e8fde49a6d92c",
+      "size": 126
+    }
+  ],
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\"name\": \"broken\", \"scripts\": {\"start\": }}\n",
+      "size_bytes": 43,
+      "sha": "b5b6bd6b5210efc49d2ce1f565c4db798435c51c"
+    },
+    {
+      "path": "pyproject.toml",
+      "content": "[project\nname = \"broken\"\ndependencies = [\n",
+      "size_bytes": 42,
+      "sha": "7b8e16275ca79aa8c62e64576d4dd24002378ee2"
+    },
+    {
+      "path": "README.md",
+      "content": "# Synthetic broken manifests\n\nBoth manifests are intentionally malformed.\nDo not infer an install or start command from them.\n",
+      "size_bytes": 126,
+      "sha": "7ff87996bc6091f5ca7e7c0a970e8fde49a6d92c"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 3,
+    "files_selected": 3,
+    "files_read": 3,
+    "bytes_read": 211,
+    "limitations": [
+      "SYNTHETIC fixture: локальные данные; репозиторий не загружался с GitHub."
+    ]
+  }
+}
