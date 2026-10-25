@@ -146,13 +146,18 @@ ModuleNotFoundError: No module named 'tensorflow'
   команда исправления `pip install tensorflow==...` + следующий шаг.
 
 <details>
-<summary><b>✅ Проверялось и на не-Python</b></summary>
+<summary><b>✅ Проверялось и на не-Python (live-прогоны)</b></summary>
 
-- `itchyny/gojq` (Go): распознан тип `go`, зависимости из `go.mod` (go 1.24),
-  ложные находки отфильтрованы (`GITHUB_TOKEN` в CI-файле — не проблема пользователя);
-  docker-run собрал проект через `go mod download` + `go build` и запустил (exit 0);
-- Rust / Java / CMake / Ruby — шаблоны Dockerfile и выбор CMD покрыты синтетическими
-  тестами (базовые образы: `rust:1-slim`, `maven:3.9-slim`, `gradle:8-slim`, `gcc:13`, `ruby:3.3-slim`).
+| Репо | Экосистема | Результат |
+|---|---|---|
+| `itchyny/gojq` | Go | ✅ build + run, exit 0 |
+| `meta-rust/rust-hello-world` | Rust | ✅ build + run, exit 0 |
+| `jameskbride/cmake-hello-world` | C/CMake | ✅ build + run, exit 0 |
+| `rahulshettyacademy/MavenHelloWorld` | Java/Maven | ✅ build; run честно упал: jar без manifest → материал для диагностики |
+| `openshift/ruby-hello-world` | Ruby | ⚪ Dockerfile автора сломан → агент пересобрал своим шаблоном; gem-зоопарк не добит (по запросу) |
+
+Дополнительно: если у репо есть свой Dockerfile и он не собирается/не стартует — агент
+автоматически пересобирает проект своим шаблоном и помечает это в логе.
 
 </details>
 
