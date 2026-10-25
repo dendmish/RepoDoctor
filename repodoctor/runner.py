@@ -13,12 +13,19 @@ import os
 import re
 import shutil
 import subprocess
+import tarfile
 import time
 from dataclasses import dataclass, field
 
 from .analyze import RepoAnalysis
 
-SANDBOX_ROOT = os.path.join(os.path.expanduser("~"), ".repodoctor", "sandbox")
+SANDBOX_ROOT = os.environ.get(
+    "REPODOCTOR_SANDBOX",
+    os.path.join(os.path.expanduser("~"), ".repodoctor", "sandbox"),
+)
+# режим «приложение работает в контейнере»: пути sandbox хост-демон не увидит,
+# поэтому build-контекст передаём потоком через stdin
+IN_CONTAINER = bool(os.environ.get("REPODOCTOR_SANDBOX"))
 BUILD_TIMEOUT = 900
 RUN_TIMEOUT = 180
 MAX_LOG_BYTES = 60_000
@@ -147,6 +154,8 @@ def build_image(sb_path: str, repo_name: str, base_image: str = "", memory: str 
         return RunResult(ok=False, stage="build",
                          error="Базовый образ Docker недоступен (Docker Hub заблокирован?)",
                          log="не удалось скачать базовый образ ни напрямую, ни через зеркала")
+    if IN_CONTAINER:
+        return _build_from_tar(sb_path, tag, memory, t0)
     cmd = ["docker", "build", "-t", tag,
            "--memory", memory, "--memory-swap", memory, sb_path]
     try:
@@ -154,6 +163,41 @@ def build_image(sb_path: str, repo_name: str, base_image: str = "", memory: str 
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         return RunResult(ok=False, stage="build", error=str(e), log=str(e))
     log = _combine(p.stdout, p.stderr)
+    if p.returncode != 0:
+        return RunResult(ok=False, stage="build", log=_clip(log), duration_s=time.time() - t0,
+                         error="образ собрать не удалось")
+    return RunResult(ok=True, stage="build", log=_clip(log), image=tag, command=" ".join(cmd),
+                     duration_s=time.time() - t0)
+
+
+def _build_from_tar(sb_path: str, tag: str, memory: str, t0: float) -> RunResult:
+    """Build-контекст tar-стримом: работает, когда sandbox смонтирован в контейнер приложения,
+    а docker-демон крутится на хосте."""
+    tar_path = os.path.join(SANDBOX_ROOT, f".buildctx-{tag.split('-')[-1]}.tar")
+    try:
+        with tarfile.open(tar_path, "w", format=tarfile.USTAR_FORMAT) as tf:
+            for name in sorted(os.listdir(sb_path)):
+                tf.add(os.path.join(sb_path, name), arcname=name)
+        with open(tar_path, "rb") as fh:
+            p = subprocess.run(
+                ["docker", "build", "-t", tag,
+                 "--memory", memory, "--memory-swap", memory, "-"],
+                stdin=fh, capture_output=True, text=True, timeout=BUILD_TIMEOUT)
+    except (tarfile.TarError, OSError, subprocess.TimeoutExpired) as e:
+        return RunResult(ok=False, stage="build", error=str(e),
+                         duration_s=time.time() - t0)
+    finally:
+        try:
+            os.remove(tar_path)
+        except OSError:
+            pass
+    log = _combine(p.stdout, p.stderr)
+    if p.returncode != 0:
+        return RunResult(ok=False, stage="build", log=_clip(log), duration_s=time.time() - t0,
+                         error="образ собрать не удалось")
+    return RunResult(ok=True, stage="build", log=_clip(log), image=tag,
+                     command=f"docker build -t {tag} - (stdin-tar)",
+                     duration_s=time.time() - t0)
     if p.returncode != 0:
         return RunResult(ok=False, stage="build", log=_clip(log), duration_s=time.time() - t0,
                          error="образ собрать не удалось")

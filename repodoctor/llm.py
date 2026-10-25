@@ -1,13 +1,14 @@
 """Обёртка над Ollama: проверка доступности, вызов модели, извлечение JSON."""
 
 import json
+import os
 import re
 import subprocess
 import time
 
 import requests
 
-OLLAMA_URL = "http://localhost:11434"
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 DEFAULT_MODEL = "qwen2.5-coder:7b"
 FALLBACK_MODELS = ["granite4.2:3b", "qwen3:4b", "qwen2.5:3b"]
 TIMEOUT = 300

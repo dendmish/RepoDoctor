@@ -64,6 +64,41 @@ ollama pull qwen2.5-coder:7b
 # → http://localhost:8501
 ```
 
+### 🐳 Docker: как «потянуть» и запустить
+
+Публичный образ приложения публикуется CI-ом в GHCR (workflow `docker-publish`),
+после мержа PR доступен любой:
+
+```bash
+docker pull ghcr.io/dendmish/repodoctor:latest
+
+# приложению нужны два «моста» с хостом:
+#  · Ollama (модели тяжёлые, качать в контейнер каждый раз нет смысла на демо)
+#  · docker.sock — чтобы сам запускать чужие проекты в песочнице
+docker run -d --name repodoctor-app -p 8501:8501 \
+  -e OLLAMA_URL=http://host.docker.internal:11434 \
+  -e REPODOCTOR_SANDBOX=/sandbox \
+  --add-host=host.docker.internal:host-gateway \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  ghcr.io/dendmish/repodoctor:latest
+
+# Ollama на хосте должна слушать не только 127.0.0.1:
+OLLAMA_HOST=0.0.0.0 ollama serve &
+```
+
+Или одним движением через compose (в репо есть `docker-compose.yml` — берёт те же
+env и mounts):
+
+```bash
+docker compose up -d     # http://localhost:8501
+```
+
+> Запуск чужих проектов из контейнерного RepoDoctor работает через смонтированный
+> `docker.sock`: sandbox-образ собирается из stdin-tar (`docker build - < ctx.tar`),
+> поэтому запускаемый проект не требует общих путей между контейнером приложения и хостом.
+> Лимиты CPU/RAM и таймауты те же, что и в native-режиме.
+
+
 ## 🧠 Как это работает
 
 ```
@@ -138,7 +173,9 @@ examples/               # сохранённые логи прогонов
 - лимиты ресурсов: `--cpus 2`, `--memory 1g` при запуске, таймауты build/run;
 - флаг **«Разрешить сеть»** в UI — можно выключить, чтобы проверить офлайн-поведение;
 - статический анализ код не исполняет — только чтение;
-- LLM работает локально (Ollama) — код репозитория не отправляется в облачные API.
+- LLM работает локально (Ollama) — код репозитория не отправляется в облачные API;
+- в Docker-режиме приложения песочница строится через stdin-tar, поэтому контейнер RepoDoctor
+  не требует общих путей с хостом — только `docker.sock`.
 
 ## 🧬 Стек
 

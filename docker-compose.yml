@@ -1,0 +1,22 @@
+services:
+  repodoctor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: repodoctor-app
+    container_name: repodoctor-app
+    ports:
+      - "8501:8501"
+    environment:
+      # Ollama крутится на хосте: берём его модели напрямую
+      OLLAMA_URL: http://host.docker.internal:11434
+      # sandbox, общий с хостом (docker-демон строит образы из этого каталога)
+      REPODOCTOR_SANDBOX: /sandbox
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # запуск чужих проектов в песочнице через демон хоста
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./_sandbox:/sandbox
+      - /tmp/repodoctor:/tmp/repodoctor
+    restart: unless-stopped
