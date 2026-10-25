@@ -178,6 +178,9 @@ if a is not None:
 if __name__ == "__main__":
     from subprocess import call
 
-    raise SystemExit(
-        call([sys.executable, "-m", "streamlit", "run", __file__, *sys.argv[1:]])
-    )
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+    if get_script_run_ctx() is None:
+        raise SystemExit(
+            call([sys.executable, "-m", "streamlit", "run", __file__, *sys.argv[1:]])
+        )
