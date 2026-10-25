@@ -96,14 +96,16 @@ flowchart TD
 
 Владелец: агент 1. Разблокирует активную параллельную реализацию.
 
-- [ ] Структура backend и frontend zone определена, package import работает.
-- [ ] Все public/internal DTO и Protocol из архитектуры реализованы.
-- [ ] API examples: Python analysis, Node analysis, fallback/needs_input, diagnosis, ErrorResponse.
-- [ ] Каждый example валидируется соответствующим DTO.
-- [ ] OpenAPI экспортируется без внешних ключей и сетевых запросов.
-- [ ] Доступен backend stub для health/analysis/diagnosis, явно dev-only; он не выдаётся за live.
-- [ ] Python версии зафиксированы; агент 4 фиксирует frontend lock в D1.
-- [ ] Остальным переданы commit ID, команды установки, пути примеров.
+**Статус: выполнен 25.10.2026, тег `g0`. Подробности и команды — [docs/handoffs/agent_1.md](docs/handoffs/agent_1.md).**
+
+- [x] Структура backend и frontend zone определена, package import работает.
+- [x] Все public/internal DTO и Protocol из архитектуры реализованы.
+- [x] API examples: Python analysis, Node analysis, fallback/needs_input, diagnosis, ErrorResponse.
+- [x] Каждый example валидируется соответствующим DTO.
+- [x] OpenAPI экспортируется без внешних ключей и сетевых запросов.
+- [x] Доступен backend stub для health/analysis/diagnosis, явно dev-only; он не выдаётся за live.
+- [x] Python версии зафиксированы; агент 4 фиксирует frontend lock в D1.
+- [x] Остальным переданы commit ID, команды установки, пути примеров.
 
 ### G1 — целый offline-сценарий
 
