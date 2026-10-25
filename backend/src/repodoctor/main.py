@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -24,12 +25,36 @@ from repodoctor.contracts.ports import (
     RepositorySource,
     StaticAnalyzer,
 )
+from repodoctor.security.limits import (
+    MAX_BODY_BYTES,
+    BodyLimitMiddleware,
+    OperationLimiter,
+    RequestContextMiddleware,
+)
+from repodoctor.services.analysis import AnalysisService
+from repodoctor.services.diagnosis import DiagnosisService
+from repodoctor.services.store import MemoryAnalysisStore
 
 logger = logging.getLogger("repodoctor")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 EXAMPLES_DIR = PROJECT_ROOT / "contracts" / "examples"
 DEV_CORS_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+GITHUB_API_BASE = "https://api.github.com"
+
+
+def create_github_client(settings: Settings) -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        base_url=GITHUB_API_BASE,
+        follow_redirects=False,
+        timeout=httpx.Timeout(10.0, connect=5.0),
+        limits=httpx.Limits(max_connections=4),
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": f"RepoDoctor/{__version__}",
+            "X-GitHub-Api-Version": settings.github_api_version,
+        },
+    )
 
 
 @dataclass(frozen=True)
@@ -53,6 +78,28 @@ def create_app(
     diagnosis_service: DiagnosisHandler | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
+    if store is None:  # explicit check: an empty store is falsy (__len__)
+        store = MemoryAnalysisStore(settings.store_ttl_seconds, settings.store_max_items)
+    limiter = OperationLimiter(settings.max_concurrent_operations)
+
+    # Real services from injected ports (A3 passes the module implementations here).
+    if analysis_service is None and None not in (source, analyzer, intelligence):
+        analysis_service = AnalysisService(
+            source=source,
+            analyzer=analyzer,
+            intelligence=intelligence,
+            store=store,
+            limiter=limiter,
+            ttl_seconds=settings.store_ttl_seconds,
+            timeout_seconds=settings.analysis_timeout_seconds,
+        )
+    if diagnosis_service is None and intelligence is not None:
+        diagnosis_service = DiagnosisService(
+            intelligence=intelligence,
+            store=store,
+            limiter=limiter,
+            timeout_seconds=settings.diagnosis_timeout_seconds,
+        )
 
     if (analysis_service is None or diagnosis_service is None) and settings.use_dev_stubs:
         # Dev-only: never reached in production (Settings forbids it).
@@ -64,14 +111,18 @@ def create_app(
         logger.warning("USE_DEV_STUBS enabled: API returns synthetic example responses")
 
     @asynccontextmanager
-    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info(
             "startup env=%s repository_mode=%s ai_configured=%s",
             settings.app_env,
             settings.repository_mode,
             settings.ai_configured,
         )
-        yield
+        # One shared client for the GitHub source (agent 2): fixed host, no redirects.
+        async with create_github_client(settings) as client:
+            app.state.github_client = client
+            yield
+        app.state.github_client = None
 
     app = FastAPI(
         title="RepoDoctor API",
@@ -81,17 +132,22 @@ def create_app(
     )
     app.state.settings = settings
     app.state.ports = Ports(source, analyzer, intelligence, store)
+    app.state.limiter = limiter
+    app.state.github_client = None
     app.state.analysis_service = analysis_service
     app.state.diagnosis_service = diagnosis_service
 
     install_error_handlers(app)
-    if settings.app_env is AppEnv.development:
+    # add_middleware wraps: the last one added is the outermost.
+    app.add_middleware(BodyLimitMiddleware, max_bytes=MAX_BODY_BYTES)
+    if settings.app_env == AppEnv.development:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=DEV_CORS_ORIGINS,
             allow_methods=["GET", "POST"],
             allow_headers=["Content-Type"],
         )
+    app.add_middleware(RequestContextMiddleware)
     app.include_router(router)
 
     # Registered after API routes: unknown /api/... still gets the JSON 404 envelope.
@@ -101,8 +157,19 @@ def create_app(
     return app
 
 
+def configure_logging() -> None:
+    """Plain stderr handler for the `repodoctor` logger (uvicorn configures only its own)."""
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+
+
 @cache
 def _app_from_env() -> FastAPI:
+    configure_logging()
     return create_app()
 
 
