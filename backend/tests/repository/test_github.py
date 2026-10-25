@@ -348,11 +348,30 @@ async def test_parallel_blob_limit_file_limit_and_retry_call_budget(analysis_req
             active -= 1
 
     upstream.override = override
-    snapshot = await upstream.fetch(analysis_request)
+    limits = replace(RepositoryLimits(), files=20, calls=28)
+    snapshot = await upstream.fetch(analysis_request, limits=limits)
     assert 1 < maximum <= 4
-    assert len(upstream.calls) <= 28
-    assert snapshot.coverage.files_selected <= 20
+    assert len(upstream.calls) <= limits.calls
+    assert snapshot.coverage.files_selected <= limits.files
     assert snapshot.coverage.status == "partial"
+
+
+async def test_expanded_default_budget_reaches_scanner(analysis_request):
+    upstream = GitHubFixture(
+        {
+            f"requirements-{i:03d}.txt": f"# {i}\n".encode() + b"# padding\n" * 400 + b"requests\n"
+            for i in range(105)
+        }
+    )
+    snapshot = await upstream.fetch(analysis_request)
+    assert snapshot.coverage.files_selected == 100
+    assert snapshot.coverage.files_read == 100
+    assert 256 * 1024 < snapshot.coverage.bytes_read <= 1024 * 1024
+    assert len(upstream.calls) == 103
+    assert snapshot.coverage.status == "partial"
+    scan = RepositoryAnalyzer().analyze(snapshot)
+    assert len(scan.selected_files) == 100
+    assert scan.coverage.files_read == 100
 
 
 @pytest.mark.parametrize("variant", ["metadata", "commit", "tree"])

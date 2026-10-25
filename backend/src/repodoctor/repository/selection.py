@@ -29,11 +29,11 @@ class RepositoryLimits:
     json_bytes: int = 512 * 1024
     tree_bytes: int = 8 * 1024 * 1024
     tree_entries: int = 20_000
-    files: int = 20
+    files: int = 100
     file_bytes: int = 64 * 1024
-    total_bytes: int = 256 * 1024
+    total_bytes: int = 1024 * 1024
     subroots: int = 3
-    calls: int = 28
+    calls: int = 108
     parallel_blobs: int = 4
     timeout_seconds: float = 35
 

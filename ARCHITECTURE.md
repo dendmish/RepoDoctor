@@ -314,11 +314,11 @@ HTTP-клиент `follow_redirects=false`. Перемещённый repo с 301
 | Длина ответа metadata/commit/blob JSON | 512 KiB на ответ |
 | Ответ tree JSON | 8 MiB, потоковое ограничение до `json.loads` |
 | Tree entries, сохраняемые в snapshot | 20 000 |
-| Текстовых файлов | 20 |
+| Текстовых файлов | 100 |
 | Один decoded текстовый файл | 64 KiB |
-| Всего decoded файлов | 256 KiB |
+| Всего decoded файлов | 1 MiB |
 | Вложенных project roots | 3, root repo учитывается отдельно |
-| GitHub HTTP calls | максимум 28, включая повторы |
+| GitHub HTTP calls | максимум 108, включая повторы |
 | Параллельных blob-запросов | 4 |
 | Connect/read timeout | 5 / 10 секунд |
 | Общий deadline загрузки | 35 секунд |
