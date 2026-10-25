@@ -4,9 +4,11 @@
 
 ## Текущее состояние — 25.10.2026
 
-Статусы сверены с кодом и handoff-файлами в `main` на коммите `44b9050`. Выполнены **4 из 20 задач: A1, A2, B1, C1**. Из общих этапов закрыт **G0**; G1–G3 остаются открытыми. Работа в других ветках не считается завершённой в `main`.
+Статусы сверены с кодом и handoff-файлами после объединения [PR №5](https://github.com/dendmish/RepoDoctor/pull/5) (`afefc3b`, D1). Выполнены **5 из 20 задач: A1, A2, B1, C1, D1**. Волна 1 завершена; из общих этапов закрыт **G0**, G1–G3 остаются открытыми. Работа в других ветках не считается завершённой в `main`.
 
-Проверка объединённого backend на этой точке: `pytest -q` — **274 passed**, `ruff check .` — **All checks passed** (Windows, Python 3.12.3). Эти проверки не заменяют открытые интеграционные и live-критерии G1–G3.
+Проверка объединённого backend на этой точке: `pytest -q` — **274 passed**, `ruff check . ../fixtures/intelligence/export_c1_examples.py` — **All checks passed**, `ruff format --check . ../fixtures/intelligence/export_c1_examples.py` — **48 files already formatted** (из `backend`, Windows, Python 3.12.15). Эти проверки не заменяют открытые интеграционные и live-критерии G1–G3.
+
+Повторная приёмка frontend D1 (из `frontend`, Windows, Node 22.22.0, npm 11.6.2): `npm ci` — успешно; `npm run generate:api` — без diff generated types; `npm test` — **20 passed**; `npm run build` — typecheck и production build прошли; `npm run test:e2e` — **2 passed** в Chromium (MSW smoke, без настоящего backend). В `dist` отсутствуют worker MSW, `setupWorker` и `synthetic-example-model`. Для проверок использована отдельная временная папка: системный TEMP имеет ограничения доступа.
 
 | Выполнено | Результат | Подтверждение |
 |---|---|---|
@@ -15,8 +17,9 @@
 | A2 | API services, TTL/LRU store, limiter, body limit, redaction | `e9d42f7`, [handoff агента 1](docs/handoffs/agent_1.md) |
 | B1 | URL/ref policy, шесть synthetic snapshots, fixture source | `1e22e93`, [handoff агента 2](docs/handoffs/agent_2.md) |
 | C1 | Детерминированный fallback-план, provider Protocol и fake для tests | `f4490c3`, [handoff агента 3](docs/handoffs/agent_3.md) |
+| D1 | React/TypeScript/Vite shell, generated API types, fetch client, формы и MSW | `afefc3b`, [PR №5](https://github.com/dendmish/RepoDoctor/pull/5), [handoff агента 4](docs/handoffs/agent_4.md) |
 
-Следующие доступные задачи: **B2** (агент 2), **C2** (агент 3), **D1** (агент 4). Агент 1 переходит к A3 после B4 и C4. C1 предоставляет только план: `diagnose` ещё не реализован, live AI не подключён. Наличие fixture source и backend services само по себе не закрывает G1.
+Следующие доступные задачи: **B2** (агент 2), **C2** (агент 3), **D2** (агент 4). Агент 1 переходит к A3 после B4 и C4. C1 предоставляет только план: `diagnose` ещё не реализован, live AI не подключён. D1 проверяет UI на MSW; полный отчёт, экспорт и диагностика относятся к D2/D3, реальный backend E2E — к D4. Наличие fixture source, backend services и UI shell само по себе не закрывает G1. Альтернативный MVP из PR №1 не включён в эту архитектуру.
 
 ## 1. Роли
 
@@ -100,7 +103,7 @@ flowchart TD
 | C3 | ⬜ Не закрыто | 3 | Лог: правила, prompt, доказательства | C1; redaction A2 для интеграции | DiagnosisResult |
 | C4 | ⬜ Не закрыто | 3 | Injection/invalid output/failure tests | C2, C3 | Готовый IntelligenceService |
 | C5 | ⬜ Не закрыто | 3 | Live AI acceptance и rubric | G2 | Честный отчёт о качестве |
-| D1 | ⬜ Не закрыто | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks |
+| D1 | ✅ Выполнено | 4 | Frontend shell, generated types, MSW | G0 | UI на нормативных mocks |
 | D2 | ⬜ Не закрыто | 4 | Report, evidence, commands, export | D1 | Экран результата |
 | D3 | ⬜ Не закрыто | 4 | Diagnosis, retry/error states | D2 | Полный пользовательский flow на mocks |
 | D4 | ⬜ Не закрыто | 4 | Real-backend E2E и интеграция | G1 | Сквозной браузерный прогон |
@@ -120,22 +123,24 @@ flowchart TD
 - [x] Каждый example валидируется соответствующим DTO.
 - [x] OpenAPI экспортируется без внешних ключей и сетевых запросов.
 - [x] Доступен backend stub для health/analysis/diagnosis, явно dev-only; он не выдаётся за live.
-- [x] Python версии зафиксированы; агент 4 фиксирует frontend lock в D1.
+- [x] Python версии зафиксированы; frontend lock и Node/npm baseline зафиксированы в D1.
 - [x] Остальным переданы commit ID, команды установки, пути примеров.
 
 ### G1 — целый offline-сценарий
 
 Владелец: агент 1, UI проверяет агент 4.
 
-**Статус: не закрыт.** Реализованы отдельные компоненты A2/B1/C1; настоящий scanner, диагностика, UI и их сквозная интеграция ещё не подтверждены.
+**Статус: частично выполнен; G1 не закрыт.** Реализованы A2/B1/C1/D1. Отметки подтверждают отдельные условия; сквозной offline-путь с настоящими модулями ещё не проверен.
 
-- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI.
-- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI.
-- [ ] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен.
-- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic.
-- [ ] Неподдерживаемый fixture URL не возвращает чужой demo report.
-- [ ] Markdown export работает, сырой лог и секреты не попадают в него.
-- [ ] HTTP/API/browser tests проходят без GitHub и AI.
+- [ ] Fixture source → настоящий scanner → настоящий fallback → API → UI. **Частично:** source и fallback готовы, UI shell работает на MSW; нужны scanner, production wiring A3 и полный report UI D2.
+- [ ] Вставленная ошибка → настоящий sanitizer/rules → diagnosis → UI. **Частично:** sanitizer и API-оболочка готовы; `IntelligenceServiceImpl.diagnose` ещё бросает `NotImplementedError` (C3), UI диагностики относится к D3.
+- [x] Исходный AI stub отключён в production composition; fallback реализован, а не захардкожен. `Settings` запрещает `USE_DEV_STUBS=true` в production; C1 строит план настоящими rules. Подключение fallback к production API остаётся задачей A3.
+- [ ] Command shell соответствует target; evidence открывается на корректных путях или честно помечено synthetic. **Частично:** C1 unit-тесты подтверждают shell/cwd и evidence IDs, synthetic-режим обозначен; evidence viewer и его браузерная проверка ещё предстоят в D2.
+- [x] Неподдерживаемый fixture URL не возвращает чужой demo report. B1 проверяет `RepositoryNotFoundError`, HTTP-тест dev stub — 404 `REPOSITORY_NOT_FOUND`; production wiring с настоящим source ещё предстоит в A3.
+- [ ] Markdown export работает, сырой лог и секреты не попадают в него. **Не выполнено:** exporter и проверки относятся к D2/D3.
+- [ ] HTTP/API/browser tests проходят без GitHub и AI. **Частично:** прошли 274 backend-теста (включая HTTP/API), 20 frontend-тестов и 2 D1 browser smoke; последние используют MSW и не подтверждают работу реального offline-конвейера. Сквозной браузерный прогон без MSW ещё не выполнен.
+
+Основания для отмеченных условий: `backend/tests/platform/test_app.py::test_dev_stubs_forbidden_in_production`, `backend/tests/platform/test_app.py::test_dev_stub_rejects_unknown_repository`, `backend/tests/repository/test_fixture_source.py::test_unknown_repository_does_not_fall_back`, `backend/tests/intelligence/test_rules.py` и `test_examples.py`. Frontend D1: `frontend/tests/*.test.*` и `frontend/tests/e2e/shell.spec.ts`; сценарии MSW нельзя выдавать за реальный backend E2E или live-проверку.
 
 ### G2 — live-путь и сборка
 
@@ -235,7 +240,7 @@ flowchart TD
 3. ✅ **A2 — выполнено** · агент 1 — routes, store, limiter, body limit, redaction. Вход: G0.
 4. ✅ **B1 — выполнено** · агент 2 — URL policy, synthetic repositories, fixture source. Вход: G0.
 5. ✅ **C1 — выполнено** · агент 3 — fallback-план и fake provider. Вход: G0 (fixtures B1 желательны, но не обязательны).
-6. **D1** · агент 4 — каркас UI, generated types, MSW. Вход: G0.
+6. ✅ **D1 — выполнено** · агент 4 — каркас UI, generated types, MSW. Вход: G0.
 
 **Волна 2 — модули (внутри каждого агента последовательно)**
 
