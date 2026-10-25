@@ -136,9 +136,11 @@ def _dockerfile_go(a: RepoAnalysis) -> tuple[str, str]:
 
 
 def _dockerfile_java(a: RepoAnalysis) -> tuple[str, str]:
+    import json as _json
+
     if a.project_type == "java-maven":
-        image, build, default = "maven:3.9-slim", "RUN mvn -q -DskipTests package || true", '["mvn", "exec:java"]'
-        cmd = _readme_cmd(a, ("mvn ",)) or default
+        image, build = "maven:3.9", "RUN mvn -q -DskipTests package || true"
+        cmd = _readme_cmd(a, ("mvn ",)) or _json.dumps(["sh", "-c", _MAVEN_JAR_RUN_SH])
     else:
         image = "gradle:8-slim"
         build = "RUN gradle build -x test -q || true"
@@ -153,14 +155,40 @@ def _dockerfile_java(a: RepoAnalysis) -> tuple[str, str]:
     return dockerfile, cmd
 
 
+_MAVEN_JAR_RUN_SH = (
+    "jar=$(find /app -maxdepth 3 -path '*target*' -name '*.jar' ! -name '*original*' ! -name '*sources*' "
+    "! -name '*javadoc*' 2>/dev/null | sort | tail -1); "
+    "if [ -n \"$jar\" ]; then exec java -jar \"$jar\"; "
+    "else echo '[RepoDoctor] Runnable jar не найден — проект собрался, но точка запуска неочевидна (см. README)'; exit 127; fi"
+)
+
+
+_ELF_FINDER_SH = (
+    "out=$(find /app -maxdepth 4 -type f -perm -111 ! -path '*/.git/*' ! -path '*/CMakeFiles/*' "
+    "! -path '*/node_modules/*' ! -name '*.o' ! -name '*.a' ! -name '*.bin' ! -name '*.so*' "
+    "| sort | while read p; do "
+    "m=$(dd if=\"$p\" bs=2 count=1 2>/dev/null | od -An -tx1 | tr -d ' \\n'); "
+    "[ \"$m\" = '7f45' ] && { echo \"$p\"; break; }; done | head -1); "
+    "[ -n \"$out\" ] && cd \"$(dirname \"$out\")\" && exec \"./$(basename \"$out\")\" || exit 127"
+)
+
+
 def _dockerfile_cmake(a: RepoAnalysis) -> tuple[str, str]:
+    import json as _json
+
     img = TYPE_BASE["cmake/make"]
     build = (
         "RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 2 "
         "|| make -j2 || true\n"
     )
-    cmd = _readme_cmd(a, ("make", "./")) or \
-        '["sh", "-c", "b=$(find ./bin ./build -maxdepth 2 -type f -executable 2>/dev/null | head -1); if [ -n \"$b\" ]; then exec ./$b; else exit 1; fi"]'
+    direct_exec = None
+    for entry in a.entry_points:
+        c = entry["cmd"] if isinstance(entry, dict) else entry
+        c = c.strip()
+        if c.startswith("./") and not c.startswith("./cmake"):
+            direct_exec = _json.dumps(["sh", "-c", "cd /app && " + c])
+            break
+    cmd = direct_exec or _json.dumps(["sh", "-c", _ELF_FINDER_SH])
     dockerfile = (
         f"FROM {img}\n"
         "WORKDIR /app\n"
@@ -173,15 +201,31 @@ def _dockerfile_cmake(a: RepoAnalysis) -> tuple[str, str]:
 
 
 def _dockerfile_ruby(a: RepoAnalysis) -> tuple[str, str]:
-    cmd = _readme_cmd(a, ("ruby ",)) or '["ruby", "main.rb"]'
+    cmd = _readme_cmd(a, ("ruby ",)) or _cmd_json(["ruby", _default_rb(a)])
     dockerfile = (
         "FROM ruby:3.3-slim\n"
         "WORKDIR /app\n"
+        "RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "
+        "build-essential pkg-config default-libmysqlclient-dev libmariadb-dev libsqlite3-dev "
+        "libssl-dev libreadline-dev && rm -rf /var/lib/apt/lists/* || true\n"
         + ("RUN bundle install || true\n" if a.has_gemfile else "") +
         "COPY . .\n"
         f"CMD {cmd}\n"
     )
     return dockerfile, cmd
+
+
+def _default_rb(a: RepoAnalysis) -> str:
+    import os as _os
+    root = a.path or ""
+    try:
+        rbs = sorted(f for f in _os.listdir(root) if f.endswith(".rb"))
+    except OSError:
+        return "main.rb"
+    for cand in ("main.rb", "app.rb", "server.rb"):
+        if cand in rbs:
+            return cand
+    return rbs[0] if rbs else "main.rb"
 
 
 def _readme_cmd(a: RepoAnalysis, prefixes) -> str | None:
@@ -267,7 +311,7 @@ def _has_native_dockerfile(dest: str) -> bool:
 TYPE_BASE = {
     "node": NODE_IMAGE,
     "rust": "rust:1-slim",
-    "java-maven": "maven:3.9-slim",
+    "java-maven": "maven:3.9",
     "java-gradle": "gradle:8-slim",
     "cmake/make": "gcc:13",
     "ruby": "ruby:3.3-slim",
