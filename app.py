@@ -1,4 +1,5 @@
 import json
+import sys
 import time
 
 import streamlit as st
@@ -172,3 +173,11 @@ if a is not None:
             st.session_state["diag"] = rd.diagnose_log(
                 pasted, "paste", a, model=st.session_state.get("model", ""))
             st.rerun()
+
+
+if __name__ == "__main__":
+    from subprocess import call
+
+    raise SystemExit(
+        call([sys.executable, "-m", "streamlit", "run", __file__, *sys.argv[1:]])
+    )

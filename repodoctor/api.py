@@ -6,7 +6,7 @@ from . import clone as _clone
 from .analyze import RepoAnalysis, analyze_repo, format_tree
 from .checks import ChecksReport, run_checks
 from .diagnose import diagnose_log, source_label
-from .llm import generate, extract_json, ollama_ok, pick_model
+from .llm import generate, extract_json, ollama_ok, pick_model, installed_models
 from . import runner as _runner
 from .runner import prepare_sandbox, build_image, run_image
 
