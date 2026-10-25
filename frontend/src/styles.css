@@ -1,0 +1,25 @@
+:root { font-family: system-ui, sans-serif; color: #162a3a; background: #f2f5f7; font-synthesis: none; line-height: 1.6; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 850px; margin: 0 auto; padding: 48px 24px; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.7rem); line-height: 1.2; margin: 8px 0 20px; }
+.eyebrow { font-size: .8rem; letter-spacing: .18em; color: #1a6564; font-weight: 750; }
+form, section { margin-top: 24px; background: white; padding: 28px; border: 1px solid #d5dfe6; border-radius: 16px; overflow-wrap: anywhere; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+legend { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; }
+label { display: block; font-weight: 600; margin-top: 16px; }
+input:not([type=checkbox]), select { width: 100%; font: inherit; padding: 11px 12px; border: 1px solid #879cae; border-radius: 7px; background: white; color: inherit; }
+small { display: block; color: #526371; margin: 7px 0; }
+.target-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.checkbox { display: flex; gap: 10px; align-items: center; }
+input[type=checkbox] { width: 20px; height: 20px; accent-color: #166361; }
+button { font: inherit; background: #166361; color: white; border: 1px solid #166361; border-radius: 8px; padding: 11px 20px; margin-top: 20px; cursor: pointer; font-weight: 650; }
+button:disabled { opacity: .6; cursor: wait; }
+:focus-visible { outline: 3px solid #c0791c; outline-offset: 3px; }
+.secondary { background: white; color: #166361; }
+.notice { background: #fff0ce; border-left: 4px solid #91650c; padding: 16px; }
+[role=alert] { border-left: 4px solid #a53535; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #bad4d3; border-top-color: #166361; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+@media (max-width: 520px) { main { padding: 24px 16px; } form, section { padding: 20px; } .target-fields { grid-template-columns: 1fr; gap: 0; } button { width: 100%; } }
