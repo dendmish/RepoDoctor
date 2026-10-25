@@ -74,7 +74,7 @@ Windows, Python 3.12.15. Из `backend`:
 
 ```powershell
 .venv/Scripts/python.exe -m pytest -q
-# 445 passed (156 intelligence tests; baseline main — 345 tests).
+# 446 passed (157 intelligence tests; baseline main — 345 tests).
 .venv/Scripts/ruff.exe check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py
 # All checks passed!
 .venv/Scripts/ruff.exe format --check . ../fixtures/intelligence/export_c1_examples.py ../fixtures/intelligence/export_c2_c3_examples.py ../fixtures/repositories/export_scans.py

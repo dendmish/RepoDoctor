@@ -53,7 +53,7 @@ class PreparedLog:
 
 def prepare_log(log: SanitizedLog) -> PreparedLog:
     """Choose head, error/traceback neighborhoods and tail, retaining original line IDs."""
-    lines = log.text.splitlines() or [""]
+    lines = log.text.split("\n")
     important = [
         i
         for i, line in enumerate(lines)
@@ -148,7 +148,7 @@ def local_diagnosis(
     location = ", ".join(root.path for root in roots) or "неизвестный корень"
     manifest_text = ", ".join(manifests) or "manifest не определён"
     root_note = f"Корень: {location}; manifest: {manifest_text}. "
-    lines = log.text.splitlines()
+    lines = log.text.split("\n")
     for kind, pattern in SIGNATURES.items():
         hit = next(
             (

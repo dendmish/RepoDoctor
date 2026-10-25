@@ -119,6 +119,14 @@ def test_trim_preserves_error_traceback_head_tail_and_original_numbers():
     assert len(prepared.evidence) < 400
 
 
+def test_log_evidence_counts_sanitized_newlines_only():
+    prepared = prepare_log(log("first\u0085same line\nEADDRINUSE\n"))
+    assert prepared.payload["line_count"] == 3
+    assert prepared.evidence[0].excerpt == "first\u0085same line"
+    assert prepared.evidence[1].id == "log_2"
+    assert prepared.evidence[1].excerpt == "EADDRINUSE"
+
+
 async def test_conflicting_python_constraints_ask_question(context):
     context.scan.facts.runtime_hints.append(
         RuntimeHint(
