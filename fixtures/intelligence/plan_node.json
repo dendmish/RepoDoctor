@@ -1,0 +1,226 @@
+{
+  "run_plan": {
+    "status": "actionable",
+    "summary": "План составлен по данным снимка; команды требуют проверки пользователем.",
+    "prerequisites": [
+      "Git; доступ к репозиторию и право создать новую локальную папку.",
+      "Node.js: >=22.12",
+      "npm, соответствующий выбранной версии Node.js."
+    ],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий",
+        "description": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "git clone -- 'https://github.com/repodoctor-fixtures/node-api-demo.git' 'node-api-demo'",
+            "cwd": ".",
+            "explanation": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "Появилась папка node-api-demo; Git завершился без ошибок.",
+        "assumptions": [
+          "Git установлен; команда выполняется в родительской папке новой копии."
+        ]
+      },
+      {
+        "id": "step_checkout",
+        "title": "Выбрать проанализированный commit",
+        "description": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "git -C 'node-api-demo' checkout --detach d161ea9664c2dd687fb7be0c88a7925d22c135e5",
+            "cwd": ".",
+            "explanation": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git rev-parse HEAD внутри копии должен вывести d161ea9664c2dd687fb7be0c88a7925d22c135e5.",
+        "assumptions": [
+          "Шаг основан на метаданных снимка и выбранном окружении."
+        ]
+      },
+      {
+        "id": "step_root",
+        "title": "Перейти в корень проекта",
+        "description": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "cd -- './node-api-demo'",
+            "cwd": ".",
+            "explanation": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_pkg_deps",
+          "ev_pkg_engines",
+          "ev_pkg_scripts"
+        ],
+        "verification": "Текущая папка соответствует <repo>.",
+        "assumptions": [
+          "Переход выполняется из родительской папки клонированного репозитория."
+        ]
+      },
+      {
+        "id": "step_runtime",
+        "title": "Проверить Node.js и npm",
+        "description": "Сопоставьте установленную версию Node.js с ограничениями из репозитория.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "node --version",
+            "cwd": "<repo>",
+            "explanation": "Сопоставьте установленную версию Node.js с ограничениями из репозитория.",
+            "requires_review": true
+          },
+          {
+            "shell": "bash",
+            "text": "npm --version",
+            "cwd": "<repo>",
+            "explanation": "Сопоставьте установленную версию Node.js с ограничениями из репозитория.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_pkg_engines"
+        ],
+        "verification": "Версия удовлетворяет: >=22.12",
+        "assumptions": [
+          "Node.js и npm установлены; при несовместимости сначала выберите нужную версию."
+        ]
+      },
+      {
+        "id": "step_install",
+        "title": "Установить зависимости Node.js",
+        "description": "Используйте npm ci по существующему lock-файлу.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "npm ci",
+            "cwd": "<repo>",
+            "explanation": "Используйте npm ci по существующему lock-файлу.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_lockfile"
+        ],
+        "verification": "Установка завершается без ошибок; проверьте сообщения npm.",
+        "assumptions": []
+      },
+      {
+        "id": "step_resources",
+        "title": "Подготовить окружение и внешние ресурсы",
+        "description": "Настройте переменные по документации проекта, не публикуя значения. Имена: PORT.",
+        "commands": [],
+        "evidence_ids": [
+          "ev_readme_port"
+        ],
+        "verification": "Имена переменных и пути соответствуют документации; секреты остаются локально.",
+        "assumptions": [
+          "Секреты и внешние ресурсы пользователь получает самостоятельно; команды загрузки и значения не генерируются."
+        ]
+      },
+      {
+        "id": "step_run",
+        "title": "Запустить подтверждённую точку входа",
+        "description": "Команда основана на фактах и источниках выбранного проекта.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "npm start",
+            "cwd": "<repo>",
+            "explanation": "Команда основана на фактах и источниках выбранного проекта.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_pkg_scripts"
+        ],
+        "verification": "Сравните вывод с README; при ошибке сохраните обезличенный лог для диагностики.",
+        "assumptions": []
+      },
+      {
+        "id": "step_verify",
+        "title": "Проверить результат запуска",
+        "description": "Проверьте ожидаемое поведение по README и отсутствие ошибок в терминале.",
+        "commands": [],
+        "evidence_ids": [
+          "ev_pkg_scripts"
+        ],
+        "verification": "Пользователь проверяет результат самостоятельно; RepoDoctor команды не выполнял.",
+        "assumptions": [
+          "Адрес сервиса, порт и результат работы не угадываются."
+        ]
+      }
+    ],
+    "questions": []
+  },
+  "additional_findings": [],
+  "evidence": [
+    {
+      "id": "ev_pkg_engines",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 5,
+      "line_end": 7,
+      "excerpt": "\"engines\": {\n  \"node\": \">=22.12\"\n},",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L5-L7"
+    },
+    {
+      "id": "ev_pkg_scripts",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 8,
+      "line_end": 10,
+      "excerpt": "\"scripts\": {\n  \"start\": \"node src/server.js\"\n},",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L8-L10"
+    },
+    {
+      "id": "ev_pkg_deps",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 11,
+      "line_end": 16,
+      "excerpt": "\"dependencies\": {\n  \"express\": \"^5.1.0\"\n},\n\"devDependencies\": {\n  \"vitest\": \"^3.2.0\"\n}",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L11-L16"
+    },
+    {
+      "id": "ev_lockfile",
+      "source": "tree",
+      "path": "package-lock.json",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package-lock.json"
+    },
+    {
+      "id": "ev_readme_port",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 20,
+      "line_end": 20,
+      "excerpt": "Сервер слушает порт из переменной PORT (по умолчанию 3000).",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/README.md#L20-L20"
+    }
+  ],
+  "generation": {
+    "mode": "fallback",
+    "reason": "disabled_by_user",
+    "model": null,
+    "prompt_version": "fallback-v1"
+  },
+  "warnings": [
+    "Команды не выполнялись; проверьте их перед локальным запуском.",
+    "Синтетический fixture: URL и commit описывают тестовый снимок; для запуска нужна локальная копия fixture, GitHub-доступность не подтверждена.",
+    "Содержимое package-lock.json не читалось: учтено только его наличие в дереве."
+  ]
+}

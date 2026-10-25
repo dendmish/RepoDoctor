@@ -1,0 +1,194 @@
+{
+  "run_plan": {
+    "status": "needs_input",
+    "summary": "Подготовительные шаги доступны; для полного запуска нужны уточнения.",
+    "prerequisites": [
+      "Git; доступ к репозиторию и право создать новую локальную папку.",
+      "Python: 3.12"
+    ],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий",
+        "description": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "git clone -- 'https://github.com/repodoctor-fixtures/python-cli-demo.git' 'python-cli-demo'",
+            "cwd": ".",
+            "explanation": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "Появилась папка python-cli-demo; Git завершился без ошибок.",
+        "assumptions": [
+          "Git установлен; команда выполняется в родительской папке новой копии."
+        ]
+      },
+      {
+        "id": "step_checkout",
+        "title": "Выбрать проанализированный commit",
+        "description": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "git -C 'python-cli-demo' checkout --detach 7a4701c87942ad5f8ea37cbace89cd58d5215dde",
+            "cwd": ".",
+            "explanation": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git rev-parse HEAD внутри копии должен вывести 7a4701c87942ad5f8ea37cbace89cd58d5215dde.",
+        "assumptions": [
+          "Шаг основан на метаданных снимка и выбранном окружении."
+        ]
+      },
+      {
+        "id": "step_root",
+        "title": "Перейти в корень проекта",
+        "description": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "Set-Location -LiteralPath './python-cli-demo'",
+            "cwd": ".",
+            "explanation": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_requirements"
+        ],
+        "verification": "Текущая папка соответствует <repo>.",
+        "assumptions": [
+          "Переход выполняется из родительской папки клонированного репозитория."
+        ]
+      },
+      {
+        "id": "step_environment",
+        "title": "Создать изолированное окружение Python",
+        "description": "Используйте интерпретатор, соответствующий ограничениям проекта; активация не нужна.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "py -3.12 --version",
+            "cwd": "<repo>",
+            "explanation": "Используйте интерпретатор, соответствующий ограничениям проекта; активация не нужна.",
+            "requires_review": true
+          },
+          {
+            "shell": "powershell",
+            "text": "py -3.12 -m venv .venv",
+            "cwd": "<repo>",
+            "explanation": "Используйте интерпретатор, соответствующий ограничениям проекта; активация не нужна.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_python_version"
+        ],
+        "verification": ".\\.venv\\Scripts\\python.exe --version: сравните версию с требованиями проекта.",
+        "assumptions": [
+          "Нужный интерпретатор установлен и доступен указанной командой; если версия не подходит, сначала выберите другой интерпретатор."
+        ]
+      },
+      {
+        "id": "step_install",
+        "title": "Установить зависимости Python",
+        "description": "Проверьте manifest и build hooks перед локальной установкой зависимостей.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": ".\\.venv\\Scripts\\python.exe -m pip install -r 'requirements.txt'",
+            "cwd": "<repo>",
+            "explanation": "Проверьте manifest и build hooks перед локальной установкой зависимостей.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_requirements"
+        ],
+        "verification": ".\\.venv\\Scripts\\python.exe -m pip check: нет конфликтов установленных зависимостей.",
+        "assumptions": [
+          "Установка будет выполнена пользователем локально после проверки manifest."
+        ]
+      },
+      {
+        "id": "step_resources",
+        "title": "Подготовить окружение и внешние ресурсы",
+        "description": "Настройте переменные по документации проекта, не публикуя значения. Имена: DEMO_API_TOKEN.",
+        "commands": [],
+        "evidence_ids": [
+          "ev_env_example"
+        ],
+        "verification": "Имена переменных и пути соответствуют документации; секреты остаются локально.",
+        "assumptions": [
+          "Секреты и внешние ресурсы пользователь получает самостоятельно; команды загрузки и значения не генерируются."
+        ]
+      }
+    ],
+    "questions": [
+      "Уточните Python-команду и доступность файла/модуля из выбранного корня; для src-layout может потребоваться установка самого пакета."
+    ]
+  },
+  "additional_findings": [],
+  "evidence": [
+    {
+      "id": "ev_readme_run",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 12,
+      "line_end": 14,
+      "excerpt": "```\npython -m demo_cli --help\n```",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/README.md#L12-L14"
+    },
+    {
+      "id": "ev_requirements",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 1,
+      "line_end": 3,
+      "excerpt": "requests==2.32.3\npython-dotenv>=1.0\nrich",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/requirements.txt#L1-L3"
+    },
+    {
+      "id": "ev_python_version",
+      "source": "file",
+      "path": ".python-version",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "3.12",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.python-version#L1-L1"
+    },
+    {
+      "id": "ev_env_example",
+      "source": "file",
+      "path": ".env.example",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "DEMO_API_TOKEN=",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.env.example#L1-L1"
+    },
+    {
+      "id": "ev_tree_main",
+      "source": "tree",
+      "path": "src/demo_cli/__main__.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/src/demo_cli/__main__.py"
+    }
+  ],
+  "generation": {
+    "mode": "fallback",
+    "reason": "disabled_by_user",
+    "model": null,
+    "prompt_version": "fallback-v1"
+  },
+  "warnings": [
+    "Команды не выполнялись; проверьте их перед локальным запуском.",
+    "Синтетический fixture: URL и commit описывают тестовый снимок; для запуска нужна локальная копия fixture, GitHub-доступность не подтверждена."
+  ]
+}

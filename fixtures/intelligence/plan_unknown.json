@@ -1,0 +1,134 @@
+{
+  "run_plan": {
+    "status": "needs_input",
+    "summary": "Подготовительные шаги доступны; для полного запуска нужны уточнения.",
+    "prerequisites": [
+      "Git; доступ к репозиторию и право создать новую локальную папку.",
+      "Python: версию требуется уточнить"
+    ],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий",
+        "description": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+        "commands": [
+          {
+            "shell": "zsh",
+            "text": "git clone -- 'https://github.com/repodoctor-fixtures/ml-experiments-demo.git' 'ml-experiments-demo'",
+            "cwd": ".",
+            "explanation": "Создайте новую рабочую копию; существующую папку не перезаписывайте.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "Появилась папка ml-experiments-demo; Git завершился без ошибок.",
+        "assumptions": [
+          "Git установлен; команда выполняется в родительской папке новой копии."
+        ]
+      },
+      {
+        "id": "step_checkout",
+        "title": "Выбрать проанализированный commit",
+        "description": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+        "commands": [
+          {
+            "shell": "zsh",
+            "text": "git -C 'ml-experiments-demo' checkout --detach c70f223ef2720154915e43c526660bbaa93c3763",
+            "cwd": ".",
+            "explanation": "Продолжайте в только что созданной копии с зафиксированным SHA.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git rev-parse HEAD внутри копии должен вывести c70f223ef2720154915e43c526660bbaa93c3763.",
+        "assumptions": [
+          "Шаг основан на метаданных снимка и выбранном окружении."
+        ]
+      },
+      {
+        "id": "step_root",
+        "title": "Перейти в корень проекта",
+        "description": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+        "commands": [
+          {
+            "shell": "zsh",
+            "text": "cd -- './ml-experiments-demo'",
+            "cwd": ".",
+            "explanation": "Все дальнейшие команды выполняйте в указанной рабочей папке.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [
+          "ev_envyml_name",
+          "ev_envyml_torch"
+        ],
+        "verification": "Текущая папка соответствует <repo>.",
+        "assumptions": [
+          "Переход выполняется из родительской папки клонированного репозитория."
+        ]
+      },
+      {
+        "id": "step_resources",
+        "title": "Подготовить окружение и внешние ресурсы",
+        "description": "Настройте переменные по документации проекта, не публикуя значения. Уточните источник данных и ожидаемый путь; не создавайте пустые заменители. Сопоставьте требования GPU/CUDA с доступным оборудованием.",
+        "commands": [],
+        "evidence_ids": [
+          "ev_envyml_torch",
+          "ev_tree_train"
+        ],
+        "verification": "Имена переменных и пути соответствуют документации; секреты остаются локально.",
+        "assumptions": [
+          "Секреты и внешние ресурсы пользователь получает самостоятельно; команды загрузки и значения не генерируются."
+        ]
+      }
+    ],
+    "questions": [
+      "Какая версия Python требуется проекту? В снимке нет источника.",
+      "Подтвердите workflow установки Python (Poetry/uv/conda или конфликт менеджеров); fallback не заменяет его на pip.",
+      "Где получить необходимые данные и в какой путь их поместить?",
+      "Нужна ли GPU и какие версии драйвера/CUDA предусмотрены проектом?"
+    ]
+  },
+  "additional_findings": [],
+  "evidence": [
+    {
+      "id": "ev_envyml_name",
+      "source": "file",
+      "path": "environment.yml",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "name: ml-demo",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/environment.yml#L1-L1"
+    },
+    {
+      "id": "ev_envyml_torch",
+      "source": "file",
+      "path": "environment.yml",
+      "line_start": 6,
+      "line_end": 7,
+      "excerpt": "  - pytorch\n  - cudatoolkit=11.8",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/environment.yml#L6-L7"
+    },
+    {
+      "id": "ev_tree_train",
+      "source": "tree",
+      "path": "train.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/train.py"
+    }
+  ],
+  "generation": {
+    "mode": "fallback",
+    "reason": "disabled_by_user",
+    "model": null,
+    "prompt_version": "fallback-v1"
+  },
+  "warnings": [
+    "Команды не выполнялись; проверьте их перед локальным запуском.",
+    "Синтетический fixture: URL и commit описывают тестовый снимок; для запуска нужна локальная копия fixture, GitHub-доступность не подтверждена.",
+    "GitHub вернул усечённое дерево (truncated=true): отсутствие файлов не утверждается.",
+    "environment.yml учтён только как сигнал, зависимости из него не разбирались."
+  ]
+}
