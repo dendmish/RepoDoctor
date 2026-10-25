@@ -1,0 +1,5 @@
+{
+  "log": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\work\\python-cli-demo\\src\\demo_cli\\__main__.py\", line 3, in <module>\nModuleNotFoundError: No module named 'dotenv'",
+  "command": ".\\.venv\\Scripts\\python.exe -m demo_cli --help",
+  "use_ai": true
+}

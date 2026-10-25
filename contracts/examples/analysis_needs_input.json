@@ -1,0 +1,174 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "4620c0d6-0561-4051-a924-1c11e63549c3",
+  "created_at": "2026-10-25T12:10:00Z",
+  "expires_at": "2026-10-25T12:40:00Z",
+  "source_mode": "fixture",
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "ml-experiments-demo",
+    "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo",
+    "default_branch": "main",
+    "resolved_commit": "c70f223ef2720154915e43c526660bbaa93c3763",
+    "description": null
+  },
+  "target": {
+    "os": "macos",
+    "shell": "zsh"
+  },
+  "facts": {
+    "stack": "python",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "python",
+        "manifest_paths": ["environment.yml"]
+      }
+    ],
+    "dependencies": [],
+    "runtime_hints": [],
+    "package_managers": [
+      {
+        "name": "conda",
+        "root": ".",
+        "evidence_ids": ["ev_envyml_name"]
+      }
+    ],
+    "entrypoints": [],
+    "env_var_names": [],
+    "data_hints": ["train.py может ожидать данные в каталоге data/, который не наблюдается в полученной части дерева."],
+    "gpu_hints": ["environment.yml упоминает pytorch и cudatoolkit=11.8."]
+  },
+  "coverage": {
+    "status": "partial",
+    "tree_entries_seen": 20000,
+    "files_selected": 1,
+    "files_read": 1,
+    "bytes_read": 312,
+    "limitations": [
+      "GitHub вернул усечённое дерево (truncated=true): отсутствие файлов не утверждается.",
+      "environment.yml учтён только как сигнал, зависимости из него не разбирались."
+    ]
+  },
+  "findings": [
+    {
+      "id": "README_MISSING:.",
+      "rule_id": "README_MISSING",
+      "title": "README не найден в полученной части дерева",
+      "description": "Инструкции запуска отсутствуют в прочитанных данных. Дерево усечено, поэтому README может существовать.",
+      "severity": "warning",
+      "confidence": "low",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Проверьте корень репозитория на GitHub или уточните инструкции у авторов."
+    },
+    {
+      "id": "ENTRYPOINT_UNCLEAR:.",
+      "rule_id": "ENTRYPOINT_UNCLEAR",
+      "title": "Точка входа не подтверждена",
+      "description": "Найден train.py, но ни manifest, ни README не указывают, как запускать проект.",
+      "severity": "warning",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": ["ev_tree_train"],
+      "suggested_action": "Уточните, какой скрипт или ноутбук нужно запускать."
+    },
+    {
+      "id": "GPU_REQUIREMENT_UNCLEAR:environment.yml",
+      "rule_id": "GPU_REQUIREMENT_UNCLEAR",
+      "title": "Неясно, нужна ли GPU",
+      "description": "environment.yml упоминает cudatoolkit. Это не доказывает, что без GPU проект не работает; на macOS CUDA недоступна.",
+      "severity": "info",
+      "confidence": "low",
+      "origin": "static",
+      "evidence_ids": ["ev_envyml_torch"],
+      "suggested_action": "Уточните, можно ли запускать на CPU."
+    },
+    {
+      "id": "PARTIAL_COVERAGE:.",
+      "rule_id": "PARTIAL_COVERAGE",
+      "title": "Анализ неполный",
+      "description": "Дерево репозитория получено не полностью, выводы об отсутствии файлов ненадёжны.",
+      "severity": "warning",
+      "confidence": "high",
+      "origin": "static",
+      "evidence_ids": [],
+      "suggested_action": "Укажите ref или подкаталог проекта, если нужен более точный анализ."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_envyml_name",
+      "source": "file",
+      "path": "environment.yml",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "name: ml-demo",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/environment.yml#L1-L1"
+    },
+    {
+      "id": "ev_envyml_torch",
+      "source": "file",
+      "path": "environment.yml",
+      "line_start": 6,
+      "line_end": 7,
+      "excerpt": "  - pytorch\n  - cudatoolkit=11.8",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/environment.yml#L6-L7"
+    },
+    {
+      "id": "ev_tree_train",
+      "source": "tree",
+      "path": "train.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/ml-experiments-demo/blob/c70f223ef2720154915e43c526660bbaa93c3763/train.py"
+    }
+  ],
+  "run_plan": {
+    "status": "needs_input",
+    "summary": "Данных недостаточно для уверенной инструкции запуска: точка входа и требования к GPU не подтверждены.",
+    "prerequisites": ["Git", "Conda (по сигналу environment.yml)"],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий и зафиксировать commit",
+        "description": "Остальные шаги появятся после ответов на вопросы.",
+        "commands": [
+          {
+            "shell": "zsh",
+            "text": "git clone https://github.com/repodoctor-fixtures/ml-experiments-demo.git",
+            "cwd": ".",
+            "explanation": "Скачивает репозиторий в папку ml-experiments-demo.",
+            "requires_review": true
+          },
+          {
+            "shell": "zsh",
+            "text": "git -C ml-experiments-demo checkout c70f223ef2720154915e43c526660bbaa93c3763",
+            "cwd": ".",
+            "explanation": "Переключает рабочую копию на проанализированный commit.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git -C ml-experiments-demo rev-parse HEAD выводит c70f223ef2720154915e43c526660bbaa93c3763.",
+        "assumptions": []
+      }
+    ],
+    "questions": [
+      "Какой файл является точкой входа: train.py или один из ноутбуков?",
+      "Нужна ли GPU (CUDA) для вашего сценария или достаточно CPU?",
+      "Где взять данные, которые ожидает train.py?"
+    ]
+  },
+  "generation": {
+    "mode": "fallback",
+    "reason": "disabled_by_user",
+    "model": null,
+    "prompt_version": "fallback-v1"
+  },
+  "warnings": [
+    "Синтетический пример контракта: репозиторий repodoctor-fixtures/ml-experiments-demo не существует на GitHub.",
+    "Анализ неполный: дерево репозитория усечено."
+  ]
+}

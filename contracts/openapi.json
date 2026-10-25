@@ -1,0 +1,1425 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RepoDoctor API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Liveness and active configuration (no external calls)",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses": {
+      "post": {
+        "summary": "Analyze a public GitHub repository",
+        "operationId": "create_analysis_api_v1_analyses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/diagnoses": {
+      "post": {
+        "summary": "Diagnose a pasted error log in the context of a stored analysis",
+        "operationId": "create_diagnosis_api_v1_analyses__analysis_id__diagnoses_post",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosisRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosisResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisRequest": {
+        "properties": {
+          "repo_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Repo Url"
+          },
+          "ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ref"
+          },
+          "target": {
+            "$ref": "#/components/schemas/TargetEnvironment"
+          },
+          "use_ai": {
+            "type": "boolean",
+            "title": "Use Ai",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "repo_url",
+          "target"
+        ],
+        "title": "AnalysisRequest"
+      },
+      "AnalysisResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version"
+          },
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          },
+          "source_mode": {
+            "$ref": "#/components/schemas/SourceMode"
+          },
+          "repository": {
+            "$ref": "#/components/schemas/RepositoryInfo"
+          },
+          "target": {
+            "$ref": "#/components/schemas/TargetEnvironment"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/RepositoryFacts"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "run_plan": {
+            "$ref": "#/components/schemas/RunPlan"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationInfo"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "analysis_id",
+          "created_at",
+          "expires_at",
+          "source_mode",
+          "repository",
+          "target",
+          "facts",
+          "coverage",
+          "findings",
+          "evidence",
+          "run_plan",
+          "generation",
+          "warnings"
+        ],
+        "title": "AnalysisResponse"
+      },
+      "Command": {
+        "properties": {
+          "shell": {
+            "$ref": "#/components/schemas/Shell"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "cwd": {
+            "type": "string",
+            "title": "Cwd"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "requires_review": {
+            "type": "boolean",
+            "title": "Requires Review"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shell",
+          "text",
+          "cwd",
+          "explanation",
+          "requires_review"
+        ],
+        "title": "Command"
+      },
+      "Confidence": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Confidence"
+      },
+      "Coverage": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CoverageStatus"
+          },
+          "tree_entries_seen": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Tree Entries Seen"
+          },
+          "files_selected": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Files Selected"
+          },
+          "files_read": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Files Read"
+          },
+          "bytes_read": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Bytes Read"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "tree_entries_seen",
+          "files_selected",
+          "files_read",
+          "bytes_read",
+          "limitations"
+        ],
+        "title": "Coverage"
+      },
+      "CoverageStatus": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "partial"
+        ],
+        "title": "CoverageStatus"
+      },
+      "Dependency": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "constraint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraint"
+          },
+          "ecosystem": {
+            "$ref": "#/components/schemas/Ecosystem"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DependencyKind"
+          },
+          "manifest_path": {
+            "type": "string",
+            "title": "Manifest Path"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "constraint",
+          "ecosystem",
+          "kind",
+          "manifest_path",
+          "evidence_ids"
+        ],
+        "title": "Dependency"
+      },
+      "DependencyKind": {
+        "type": "string",
+        "enum": [
+          "runtime",
+          "dev",
+          "optional"
+        ],
+        "title": "DependencyKind"
+      },
+      "DiagnosisCause": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Confidence"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "fixes": {
+            "items": {
+              "$ref": "#/components/schemas/RunStep"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Fixes"
+          },
+          "verification": {
+            "type": "string",
+            "title": "Verification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "explanation",
+          "confidence",
+          "origin",
+          "evidence_ids",
+          "fixes",
+          "verification"
+        ],
+        "title": "DiagnosisCause"
+      },
+      "DiagnosisRequest": {
+        "properties": {
+          "log": {
+            "type": "string",
+            "maxLength": 30000,
+            "minLength": 1,
+            "title": "Log"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command"
+          },
+          "use_ai": {
+            "type": "boolean",
+            "title": "Use Ai",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "log"
+        ],
+        "title": "DiagnosisRequest"
+      },
+      "DiagnosisResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version"
+          },
+          "diagnosis_id": {
+            "type": "string",
+            "title": "Diagnosis Id"
+          },
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationInfo"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "causes": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosisCause"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Causes"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "diagnosis_id",
+          "analysis_id",
+          "created_at",
+          "generation",
+          "summary",
+          "causes",
+          "questions",
+          "evidence",
+          "warnings"
+        ],
+        "title": "DiagnosisResponse"
+      },
+      "Ecosystem": {
+        "type": "string",
+        "enum": [
+          "python",
+          "node"
+        ],
+        "title": "Ecosystem"
+      },
+      "EntryPoint": {
+        "properties": {
+          "root": {
+            "type": "string",
+            "title": "Root"
+          },
+          "command_hint": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Command Hint"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntryPointKind"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "root",
+          "command_hint",
+          "kind",
+          "evidence_ids"
+        ],
+        "title": "EntryPoint"
+      },
+      "EntryPointKind": {
+        "type": "string",
+        "enum": [
+          "readme",
+          "script",
+          "module",
+          "file"
+        ],
+        "title": "EntryPointKind"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable"
+          },
+          "details": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Details"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "retryable",
+          "details",
+          "request_id"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "INVALID_INPUT",
+          "REPOSITORY_NOT_FOUND",
+          "REF_NOT_FOUND",
+          "ANALYSIS_NOT_FOUND",
+          "EMPTY_REPOSITORY",
+          "PAYLOAD_TOO_LARGE",
+          "UNSUPPORTED_REPOSITORY",
+          "SERVER_BUSY",
+          "GITHUB_RATE_LIMITED",
+          "GITHUB_UNAVAILABLE",
+          "ANALYSIS_TIMEOUT",
+          "INTERNAL_ERROR",
+          "NOT_FOUND",
+          "METHOD_NOT_ALLOWED"
+        ],
+        "title": "ErrorCode"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Evidence": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "source": {
+            "$ref": "#/components/schemas/EvidenceSource"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "line_start": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Start"
+          },
+          "line_end": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line End"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Excerpt"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "path",
+          "line_start",
+          "line_end",
+          "excerpt",
+          "url"
+        ],
+        "title": "Evidence"
+      },
+      "EvidenceSource": {
+        "type": "string",
+        "enum": [
+          "file",
+          "tree",
+          "log"
+        ],
+        "title": "EvidenceSource"
+      },
+      "Finding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Rule Id"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Confidence"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "suggested_action": {
+            "type": "string",
+            "title": "Suggested Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "rule_id",
+          "title",
+          "description",
+          "severity",
+          "confidence",
+          "origin",
+          "evidence_ids",
+          "suggested_action"
+        ],
+        "title": "Finding"
+      },
+      "GenerationInfo": {
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GenerationMode"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Prompt Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mode",
+          "reason",
+          "model",
+          "prompt_version"
+        ],
+        "title": "GenerationInfo"
+      },
+      "GenerationMode": {
+        "type": "string",
+        "enum": [
+          "ai",
+          "fallback"
+        ],
+        "title": "GenerationMode"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "repository_mode": {
+            "$ref": "#/components/schemas/RepositoryMode"
+          },
+          "ai_configured": {
+            "type": "boolean",
+            "title": "Ai Configured"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "repository_mode",
+          "ai_configured"
+        ],
+        "title": "HealthResponse"
+      },
+      "Origin": {
+        "type": "string",
+        "enum": [
+          "static",
+          "ai"
+        ],
+        "title": "Origin"
+      },
+      "PackageManager": {
+        "type": "string",
+        "enum": [
+          "pip",
+          "uv",
+          "poetry",
+          "npm",
+          "yarn",
+          "pnpm",
+          "conda"
+        ],
+        "title": "PackageManager"
+      },
+      "PackageManagerHint": {
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/PackageManager"
+          },
+          "root": {
+            "type": "string",
+            "title": "Root"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "root",
+          "evidence_ids"
+        ],
+        "title": "PackageManagerHint"
+      },
+      "PlanStatus": {
+        "type": "string",
+        "enum": [
+          "actionable",
+          "needs_input"
+        ],
+        "title": "PlanStatus"
+      },
+      "ProjectRoot": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "stack": {
+            "$ref": "#/components/schemas/Stack"
+          },
+          "manifest_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Manifest Paths"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "stack",
+          "manifest_paths"
+        ],
+        "title": "ProjectRoot"
+      },
+      "RepositoryFacts": {
+        "properties": {
+          "stack": {
+            "$ref": "#/components/schemas/Stack"
+          },
+          "project_roots": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectRoot"
+            },
+            "type": "array",
+            "title": "Project Roots"
+          },
+          "dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/Dependency"
+            },
+            "type": "array",
+            "title": "Dependencies"
+          },
+          "runtime_hints": {
+            "items": {
+              "$ref": "#/components/schemas/RuntimeHint"
+            },
+            "type": "array",
+            "title": "Runtime Hints"
+          },
+          "package_managers": {
+            "items": {
+              "$ref": "#/components/schemas/PackageManagerHint"
+            },
+            "type": "array",
+            "title": "Package Managers"
+          },
+          "entrypoints": {
+            "items": {
+              "$ref": "#/components/schemas/EntryPoint"
+            },
+            "type": "array",
+            "title": "Entrypoints"
+          },
+          "env_var_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Env Var Names"
+          },
+          "data_hints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data Hints"
+          },
+          "gpu_hints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Gpu Hints"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stack",
+          "project_roots",
+          "dependencies",
+          "runtime_hints",
+          "package_managers",
+          "entrypoints",
+          "env_var_names",
+          "data_hints",
+          "gpu_hints"
+        ],
+        "title": "RepositoryFacts"
+      },
+      "RepositoryInfo": {
+        "properties": {
+          "owner": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Owner"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "default_branch": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Default Branch"
+          },
+          "resolved_commit": {
+            "type": "string",
+            "title": "Resolved Commit"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "owner",
+          "name",
+          "url",
+          "default_branch",
+          "resolved_commit",
+          "description"
+        ],
+        "title": "RepositoryInfo"
+      },
+      "RepositoryMode": {
+        "type": "string",
+        "enum": [
+          "live",
+          "fixture"
+        ],
+        "title": "RepositoryMode"
+      },
+      "RunPlan": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "prerequisites": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Prerequisites"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/RunStep"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Steps"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "summary",
+          "prerequisites",
+          "steps",
+          "questions"
+        ],
+        "title": "RunPlan"
+      },
+      "RunStep": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "commands": {
+            "items": {
+              "$ref": "#/components/schemas/Command"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Commands"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "verification": {
+            "type": "string",
+            "title": "Verification"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "commands",
+          "evidence_ids",
+          "verification",
+          "assumptions"
+        ],
+        "title": "RunStep"
+      },
+      "RuntimeHint": {
+        "properties": {
+          "runtime": {
+            "$ref": "#/components/schemas/Ecosystem"
+          },
+          "constraint": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Constraint"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "runtime",
+          "constraint",
+          "evidence_ids"
+        ],
+        "title": "RuntimeHint"
+      },
+      "Severity": {
+        "type": "string",
+        "enum": [
+          "info",
+          "warning",
+          "blocker"
+        ],
+        "title": "Severity"
+      },
+      "Shell": {
+        "type": "string",
+        "enum": [
+          "powershell",
+          "bash",
+          "zsh"
+        ],
+        "title": "Shell"
+      },
+      "SourceMode": {
+        "type": "string",
+        "enum": [
+          "github",
+          "fixture"
+        ],
+        "title": "SourceMode"
+      },
+      "Stack": {
+        "type": "string",
+        "enum": [
+          "python",
+          "node",
+          "mixed",
+          "unknown"
+        ],
+        "title": "Stack"
+      },
+      "TargetEnvironment": {
+        "properties": {
+          "os": {
+            "$ref": "#/components/schemas/TargetOS"
+          },
+          "shell": {
+            "$ref": "#/components/schemas/Shell"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "os",
+          "shell"
+        ],
+        "title": "TargetEnvironment"
+      },
+      "TargetOS": {
+        "type": "string",
+        "enum": [
+          "windows",
+          "linux",
+          "macos"
+        ],
+        "title": "TargetOS"
+      }
+    }
+  }
+}

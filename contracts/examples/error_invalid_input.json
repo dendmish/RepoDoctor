@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Запрос не прошёл проверку.",
+    "retryable": false,
+    "details": [
+      "target: Value error, supported pairs: windows/powershell, linux/bash, macos/zsh"
+    ],
+    "request_id": "6517deda094945f7a35dc3d2076dd805"
+  }
+}

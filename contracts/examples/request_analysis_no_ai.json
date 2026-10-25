@@ -1,0 +1,9 @@
+{
+  "repo_url": "https://github.com/repodoctor-fixtures/ml-experiments-demo",
+  "ref": "main",
+  "target": {
+    "os": "macos",
+    "shell": "zsh"
+  },
+  "use_ai": false
+}

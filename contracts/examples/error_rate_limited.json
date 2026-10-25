@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "GITHUB_RATE_LIMITED",
+    "message": "Достигнут лимит запросов GitHub. Повторите позже.",
+    "retryable": true,
+    "details": ["Повторить можно примерно через 60 секунд."],
+    "request_id": "9c2b7e41a0d84f6e9b3a5c1d7e2f8a60"
+  }
+}

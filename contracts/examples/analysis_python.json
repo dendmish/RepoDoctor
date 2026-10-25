@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "503becea-447b-4f55-9ed5-a6758911481e",
+  "created_at": "2026-10-25T12:00:00Z",
+  "expires_at": "2026-10-25T12:30:00Z",
+  "source_mode": "fixture",
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "python-cli-demo",
+    "url": "https://github.com/repodoctor-fixtures/python-cli-demo",
+    "default_branch": "main",
+    "resolved_commit": "7a4701c87942ad5f8ea37cbace89cd58d5215dde",
+    "description": "SYNTHETIC fixture: небольшое Python CLI-приложение"
+  },
+  "target": {
+    "os": "windows",
+    "shell": "powershell"
+  },
+  "facts": {
+    "stack": "python",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "python",
+        "manifest_paths": ["requirements.txt"]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "requests",
+        "constraint": "==2.32.3",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": ["ev_requirements"]
+      },
+      {
+        "name": "python-dotenv",
+        "constraint": ">=1.0",
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": ["ev_requirements"]
+      },
+      {
+        "name": "rich",
+        "constraint": null,
+        "ecosystem": "python",
+        "kind": "runtime",
+        "manifest_path": "requirements.txt",
+        "evidence_ids": ["ev_requirements"]
+      }
+    ],
+    "runtime_hints": [
+      {
+        "runtime": "python",
+        "constraint": "3.12",
+        "evidence_ids": ["ev_python_version"]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "pip",
+        "root": ".",
+        "evidence_ids": ["ev_requirements"]
+      }
+    ],
+    "entrypoints": [
+      {
+        "root": ".",
+        "command_hint": "python -m demo_cli",
+        "kind": "module",
+        "evidence_ids": ["ev_readme_run", "ev_tree_main"]
+      }
+    ],
+    "env_var_names": ["DEMO_API_TOKEN"],
+    "data_hints": [],
+    "gpu_hints": []
+  },
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 14,
+    "files_selected": 4,
+    "files_read": 4,
+    "bytes_read": 1830,
+    "limitations": []
+  },
+  "findings": [
+    {
+      "id": "ENV_CONFIGURATION_REQUIRED:.env.example",
+      "rule_id": "ENV_CONFIGURATION_REQUIRED",
+      "title": "Нужна настройка переменных окружения",
+      "description": "В .env.example объявлена переменная DEMO_API_TOKEN. Её значение в репозитории не задано.",
+      "severity": "warning",
+      "confidence": "high",
+      "origin": "static",
+      "evidence_ids": ["ev_env_example"],
+      "suggested_action": "Создайте .env на основе .env.example и задайте DEMO_API_TOKEN своим значением."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_readme_run",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 12,
+      "line_end": 14,
+      "excerpt": "```\npython -m demo_cli --help\n```",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/README.md#L12-L14"
+    },
+    {
+      "id": "ev_requirements",
+      "source": "file",
+      "path": "requirements.txt",
+      "line_start": 1,
+      "line_end": 3,
+      "excerpt": "requests==2.32.3\npython-dotenv>=1.0\nrich",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/requirements.txt#L1-L3"
+    },
+    {
+      "id": "ev_python_version",
+      "source": "file",
+      "path": ".python-version",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "3.12",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.python-version#L1-L1"
+    },
+    {
+      "id": "ev_env_example",
+      "source": "file",
+      "path": ".env.example",
+      "line_start": 1,
+      "line_end": 1,
+      "excerpt": "DEMO_API_TOKEN=",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/.env.example#L1-L1"
+    },
+    {
+      "id": "ev_tree_main",
+      "source": "tree",
+      "path": "src/demo_cli/__main__.py",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/python-cli-demo/blob/7a4701c87942ad5f8ea37cbace89cd58d5215dde/src/demo_cli/__main__.py"
+    }
+  ],
+  "run_plan": {
+    "status": "actionable",
+    "summary": "Python 3.12, зависимости через pip из requirements.txt, запуск модуля demo_cli.",
+    "prerequisites": ["Git", "Python 3.12 (py launcher)"],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий и зафиксировать commit",
+        "description": "Все шаги рассчитаны на проанализированный commit.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "git clone https://github.com/repodoctor-fixtures/python-cli-demo.git",
+            "cwd": ".",
+            "explanation": "Скачивает репозиторий в папку python-cli-demo.",
+            "requires_review": true
+          },
+          {
+            "shell": "powershell",
+            "text": "git -C python-cli-demo checkout 7a4701c87942ad5f8ea37cbace89cd58d5215dde",
+            "cwd": ".",
+            "explanation": "Переключает рабочую копию на проанализированный commit.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git -C python-cli-demo rev-parse HEAD выводит 7a4701c87942ad5f8ea37cbace89cd58d5215dde.",
+        "assumptions": []
+      },
+      {
+        "id": "step_venv",
+        "title": "Создать виртуальное окружение Python 3.12",
+        "description": "Версия взята из .python-version.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "py -3.12 -m venv .venv",
+            "cwd": "<repo>",
+            "explanation": "Создаёт изолированное окружение .venv.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_python_version"],
+        "verification": ".\\.venv\\Scripts\\python.exe --version выводит Python 3.12.x.",
+        "assumptions": ["Python 3.12 установлен и доступен через py launcher."]
+      },
+      {
+        "id": "step_install",
+        "title": "Установить зависимости",
+        "description": "Используется явный путь к python.exe окружения, активация shell не нужна.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": ".\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt",
+            "cwd": "<repo>",
+            "explanation": "Устанавливает пакеты из requirements.txt в .venv.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_requirements"],
+        "verification": ".\\.venv\\Scripts\\python.exe -m pip check не сообщает о конфликтах.",
+        "assumptions": []
+      },
+      {
+        "id": "step_env",
+        "title": "Подготовить .env",
+        "description": "Скопируйте шаблон и впишите своё значение DEMO_API_TOKEN.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": "Copy-Item .env.example .env",
+            "cwd": "<repo>",
+            "explanation": "Создаёт локальный .env из шаблона.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_env_example"],
+        "verification": "Файл .env существует и содержит непустой DEMO_API_TOKEN.",
+        "assumptions": ["Значение DEMO_API_TOKEN пользователь получает самостоятельно."]
+      },
+      {
+        "id": "step_run",
+        "title": "Запустить CLI",
+        "description": "Команда запуска указана в README, модуль присутствует в дереве.",
+        "commands": [
+          {
+            "shell": "powershell",
+            "text": ".\\.venv\\Scripts\\python.exe -m demo_cli --help",
+            "cwd": "<repo>",
+            "explanation": "Запускает модуль demo_cli и выводит справку.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_readme_run", "ev_tree_main"],
+        "verification": "Выводится справка CLI без traceback.",
+        "assumptions": []
+      }
+    ],
+    "questions": []
+  },
+  "generation": {
+    "mode": "ai",
+    "reason": null,
+    "model": "synthetic-example-model",
+    "prompt_version": "analysis-v1"
+  },
+  "warnings": [
+    "Синтетический пример контракта: репозиторий repodoctor-fixtures/python-cli-demo не существует на GitHub."
+  ]
+}

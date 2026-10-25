@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0",
+  "analysis_id": "9743a5cb-e9c5-4d12-9267-40d68ce76dc0",
+  "created_at": "2026-10-25T12:05:00Z",
+  "expires_at": "2026-10-25T12:35:00Z",
+  "source_mode": "fixture",
+  "repository": {
+    "owner": "repodoctor-fixtures",
+    "name": "node-api-demo",
+    "url": "https://github.com/repodoctor-fixtures/node-api-demo",
+    "default_branch": "main",
+    "resolved_commit": "d161ea9664c2dd687fb7be0c88a7925d22c135e5",
+    "description": "SYNTHETIC fixture: HTTP API на Node.js"
+  },
+  "target": {
+    "os": "linux",
+    "shell": "bash"
+  },
+  "facts": {
+    "stack": "node",
+    "project_roots": [
+      {
+        "path": ".",
+        "stack": "node",
+        "manifest_paths": ["package.json"]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "express",
+        "constraint": "^5.1.0",
+        "ecosystem": "node",
+        "kind": "runtime",
+        "manifest_path": "package.json",
+        "evidence_ids": ["ev_pkg_deps"]
+      },
+      {
+        "name": "vitest",
+        "constraint": "^3.2.0",
+        "ecosystem": "node",
+        "kind": "dev",
+        "manifest_path": "package.json",
+        "evidence_ids": ["ev_pkg_deps"]
+      }
+    ],
+    "runtime_hints": [
+      {
+        "runtime": "node",
+        "constraint": ">=22.12",
+        "evidence_ids": ["ev_pkg_engines"]
+      }
+    ],
+    "package_managers": [
+      {
+        "name": "npm",
+        "root": ".",
+        "evidence_ids": ["ev_lockfile"]
+      }
+    ],
+    "entrypoints": [
+      {
+        "root": ".",
+        "command_hint": "npm start",
+        "kind": "script",
+        "evidence_ids": ["ev_pkg_scripts"]
+      }
+    ],
+    "env_var_names": ["PORT"],
+    "data_hints": [],
+    "gpu_hints": []
+  },
+  "coverage": {
+    "status": "complete",
+    "tree_entries_seen": 23,
+    "files_selected": 2,
+    "files_read": 2,
+    "bytes_read": 2410,
+    "limitations": ["Содержимое package-lock.json не читалось: учтено только его наличие в дереве."]
+  },
+  "findings": [
+    {
+      "id": "ENV_CONFIGURATION_REQUIRED:README.md",
+      "rule_id": "ENV_CONFIGURATION_REQUIRED",
+      "title": "Порт задаётся переменной PORT",
+      "description": "README сообщает, что сервер читает порт из PORT (по умолчанию 3000).",
+      "severity": "info",
+      "confidence": "medium",
+      "origin": "static",
+      "evidence_ids": ["ev_readme_port"],
+      "suggested_action": "Если порт 3000 занят, задайте PORT перед запуском."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_pkg_engines",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 5,
+      "line_end": 7,
+      "excerpt": "\"engines\": {\n  \"node\": \">=22.12\"\n},",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L5-L7"
+    },
+    {
+      "id": "ev_pkg_scripts",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 8,
+      "line_end": 10,
+      "excerpt": "\"scripts\": {\n  \"start\": \"node src/server.js\"\n},",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L8-L10"
+    },
+    {
+      "id": "ev_pkg_deps",
+      "source": "file",
+      "path": "package.json",
+      "line_start": 11,
+      "line_end": 16,
+      "excerpt": "\"dependencies\": {\n  \"express\": \"^5.1.0\"\n},\n\"devDependencies\": {\n  \"vitest\": \"^3.2.0\"\n}",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package.json#L11-L16"
+    },
+    {
+      "id": "ev_lockfile",
+      "source": "tree",
+      "path": "package-lock.json",
+      "line_start": null,
+      "line_end": null,
+      "excerpt": "Файл присутствует в дереве commit.",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/package-lock.json"
+    },
+    {
+      "id": "ev_readme_port",
+      "source": "file",
+      "path": "README.md",
+      "line_start": 20,
+      "line_end": 20,
+      "excerpt": "Сервер слушает порт из переменной PORT (по умолчанию 3000).",
+      "url": "https://github.com/repodoctor-fixtures/node-api-demo/blob/d161ea9664c2dd687fb7be0c88a7925d22c135e5/README.md#L20-L20"
+    }
+  ],
+  "run_plan": {
+    "status": "actionable",
+    "summary": "Node.js не ниже 22.12, установка через npm ci по package-lock.json, запуск npm start.",
+    "prerequisites": ["Git", "Node.js >=22.12 и npm"],
+    "steps": [
+      {
+        "id": "step_clone",
+        "title": "Клонировать репозиторий и зафиксировать commit",
+        "description": "Все шаги рассчитаны на проанализированный commit.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "git clone https://github.com/repodoctor-fixtures/node-api-demo.git",
+            "cwd": ".",
+            "explanation": "Скачивает репозиторий в папку node-api-demo.",
+            "requires_review": true
+          },
+          {
+            "shell": "bash",
+            "text": "git -C node-api-demo checkout d161ea9664c2dd687fb7be0c88a7925d22c135e5",
+            "cwd": ".",
+            "explanation": "Переключает рабочую копию на проанализированный commit.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": [],
+        "verification": "git -C node-api-demo rev-parse HEAD выводит d161ea9664c2dd687fb7be0c88a7925d22c135e5.",
+        "assumptions": []
+      },
+      {
+        "id": "step_node_version",
+        "title": "Проверить версию Node.js",
+        "description": "package.json требует engines.node >=22.12.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "node --version",
+            "cwd": "<repo>",
+            "explanation": "Показывает установленную версию Node.js.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_pkg_engines"],
+        "verification": "Версия не ниже v22.12.0.",
+        "assumptions": []
+      },
+      {
+        "id": "step_install",
+        "title": "Установить зависимости",
+        "description": "В корне есть package-lock.json, поэтому используется npm ci.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "npm ci",
+            "cwd": "<repo>",
+            "explanation": "Ставит точные версии из package-lock.json.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_lockfile"],
+        "verification": "Команда завершается без ошибок, появляется node_modules.",
+        "assumptions": []
+      },
+      {
+        "id": "step_run",
+        "title": "Запустить сервер",
+        "description": "Скрипт start объявлен в package.json.",
+        "commands": [
+          {
+            "shell": "bash",
+            "text": "npm start",
+            "cwd": "<repo>",
+            "explanation": "Запускает node src/server.js.",
+            "requires_review": true
+          }
+        ],
+        "evidence_ids": ["ev_pkg_scripts", "ev_readme_port"],
+        "verification": "В консоли нет ошибок, сервер отвечает на http://localhost:3000 (или на заданный PORT).",
+        "assumptions": ["Порт 3000 свободен либо задан PORT."]
+      }
+    ],
+    "questions": []
+  },
+  "generation": {
+    "mode": "fallback",
+    "reason": "ai_not_configured",
+    "model": null,
+    "prompt_version": "fallback-v1"
+  },
+  "warnings": [
+    "Синтетический пример контракта: репозиторий repodoctor-fixtures/node-api-demo не существует на GitHub."
+  ]
+}

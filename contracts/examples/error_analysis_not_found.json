@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "ANALYSIS_NOT_FOUND",
+    "message": "Анализ не найден или устарел. Запустите анализ повторно.",
+    "retryable": false,
+    "details": [],
+    "request_id": "0b9f6f1d2c3e4a5b8c7d6e5f4a3b2c1d"
+  }
+}
