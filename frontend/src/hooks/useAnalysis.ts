@@ -9,6 +9,7 @@ export function useAnalysis() {
   const [state, setState] = useState<State>({ status: 'idle' });
   const sequence = useRef(0);
   const active = useRef<AbortController | null>(null);
+  const lastRequest = useRef<AnalysisRequest | null>(null);
   const cancel = useCallback(() => {
     sequence.current++;
     active.current?.abort();
@@ -20,6 +21,7 @@ export function useAnalysis() {
     if (active.current) return;
     const controller = new AbortController();
     active.current = controller;
+    lastRequest.current = { ...request, target: { ...request.target } };
     const current = ++sequence.current;
     setState({ status: 'submitting' });
     try {
@@ -31,5 +33,6 @@ export function useAnalysis() {
       if (sequence.current === current) active.current = null;
     }
   }, []);
-  return { state, submit, cancel };
+  const retry = useCallback(() => { if (lastRequest.current) void submit(lastRequest.current); }, [submit]);
+  return { state, submit, cancel, retry, lastRequest: lastRequest.current };
 }
