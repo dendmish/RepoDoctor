@@ -17,7 +17,7 @@ import tarfile
 import time
 from dataclasses import dataclass, field
 
-from .analyze import RepoAnalysis
+from .analyze import RepoAnalysis, _parse_cargo_toml, _parse_go_mod
 
 SANDBOX_ROOT = os.environ.get(
     "REPODOCTOR_SANDBOX",
@@ -74,7 +74,7 @@ def _sanitize_tag(s: str) -> str:
 
 
 def make_dockerfile(a: RepoAnalysis) -> tuple[str, str]:
-    """Возвращает (dockerfile_text, run_command)."""
+    """Возвращает (dockerfile_text, run_command) по типу проекта."""
     if a.project_type == "node":
         cmd = _pick_cmd(a, default="npm start")
         dockerfile = (
@@ -85,6 +85,117 @@ def make_dockerfile(a: RepoAnalysis) -> tuple[str, str]:
             f"CMD {cmd}\n"
         )
         return dockerfile, cmd
+
+    if a.project_type == "rust":
+        return _dockerfile_rust(a)
+
+    if a.project_type == "go":
+        return _dockerfile_go(a)
+
+    if a.project_type in ("java-maven", "java-gradle"):
+        return _dockerfile_java(a)
+
+    if a.project_type == "cmake/make":
+        return _dockerfile_cmake(a)
+
+    if a.project_type == "ruby":
+        return _dockerfile_ruby(a)
+
+    return _dockerfile_python(a)
+
+
+def _dockerfile_rust(a: RepoAnalysis) -> tuple[str, str]:
+    RUST_IMAGE = "rust:1-slim"
+    cmd = _readme_cmd(a, ("cargo run", "cargo build")) or '["cargo", "run"]'
+    dockerfile = (
+        f"FROM {RUST_IMAGE}\n"
+        "WORKDIR /app\n"
+        "RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq build-essential pkg-config && rm -rf /var/lib/apt/lists/* || true\n"
+        "COPY . .\n"
+        "RUN cargo build --release || true\n"
+        f"CMD {cmd}\n"
+    )
+    return dockerfile, cmd
+
+
+def _dockerfile_go(a: RepoAnalysis) -> tuple[str, str]:
+    GO_IMAGE = "golang:1.23-slim"
+    _, go_ver = _parse_go_mod(a.path)
+    image = f"golang:{go_ver}-slim" if go_ver else GO_IMAGE
+    cmd = _readme_cmd(a, ("go run",)) or '["go", "run", "."]'
+    dockerfile = (
+        f"FROM {image}\n"
+        "WORKDIR /app\n"
+        "COPY go.mod .\n" + ("COPY go.sum .\n" if (a.path and os.path.isfile(os.path.join(a.path, "go.sum"))) else "") +
+        "RUN go mod download 2>&1 | tail -3 || true\n"
+        "COPY . .\n"
+        "RUN go build -o repodoctor-app . || true\n"
+        f"CMD {cmd}\n"
+    )
+    return dockerfile, cmd
+
+
+def _dockerfile_java(a: RepoAnalysis) -> tuple[str, str]:
+    if a.project_type == "java-maven":
+        image, build, default = "maven:3.9-slim", "RUN mvn -q -DskipTests package || true", '["mvn", "exec:java"]'
+        cmd = _readme_cmd(a, ("mvn ",)) or default
+    else:
+        image = "gradle:8-slim"
+        build = "RUN gradle build -x test -q || true"
+        cmd = _readme_cmd(a, ("gradle ",)) or _cmd_json(["gradle", "run"])
+    dockerfile = (
+        f"FROM {image}\n"
+        "WORKDIR /app\n"
+        "COPY . .\n"
+        f"{build}\n"
+        f"CMD {cmd}\n"
+    )
+    return dockerfile, cmd
+
+
+def _dockerfile_cmake(a: RepoAnalysis) -> tuple[str, str]:
+    img = TYPE_BASE["cmake/make"]
+    build = (
+        "RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 2 "
+        "|| make -j2 || true\n"
+    )
+    cmd = _readme_cmd(a, ("make", "./")) or \
+        '["sh", "-c", "b=$(find ./bin ./build -maxdepth 2 -type f -executable 2>/dev/null | head -1); if [ -n \"$b\" ]; then exec ./$b; else exit 1; fi"]'
+    dockerfile = (
+        f"FROM {img}\n"
+        "WORKDIR /app\n"
+        "RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq cmake make && rm -rf /var/lib/apt/lists/* || true\n"
+        "COPY . .\n"
+        f"{build}"
+        f"CMD {cmd}\n"
+    )
+    return dockerfile, cmd
+
+
+def _dockerfile_ruby(a: RepoAnalysis) -> tuple[str, str]:
+    cmd = _readme_cmd(a, ("ruby ",)) or '["ruby", "main.rb"]'
+    dockerfile = (
+        "FROM ruby:3.3-slim\n"
+        "WORKDIR /app\n"
+        + ("RUN bundle install || true\n" if a.has_gemfile else "") +
+        "COPY . .\n"
+        f"CMD {cmd}\n"
+    )
+    return dockerfile, cmd
+
+
+def _readme_cmd(a: RepoAnalysis, prefixes) -> str | None:
+    """Первый README-команда, начинающийся с одного из prefixes (без restore to shell)."""
+    for entry in a.entry_points:
+        c = entry["cmd"] if isinstance(entry, dict) else entry
+        c = c.strip()
+        if any(c.startswith(p) for p in prefixes):
+            import json as _json
+            return _json.dumps(["sh", "-c", c])
+    return None
+
+
+def _dockerfile_python(a: RepoAnalysis) -> tuple[str, str]:
     cmd = _pick_cmd(a, default="python main.py")
     torch_pkgs = [d.split()[0] for d in a.dependencies
                   if d.split()[0].split(":", 1)[-1].lower().split("[")[0] in
@@ -134,7 +245,7 @@ def _cmd_json(parts: list[str]) -> str:
 
 
 def prepare_sandbox(a: RepoAnalysis) -> str:
-    """Копирует клон в sandbox и пишет туда Dockerfile. Возвращает путь sandbox."""
+    """Копирует клон в sandbox и пишет туда Dockerfile (или сохраняет свой). Возвращает путь."""
     os.makedirs(SANDBOX_ROOT, exist_ok=True)
     tag = _sanitize_tag(a.repo_name or "project")
     dest = os.path.join(SANDBOX_ROOT, tag)
@@ -142,18 +253,36 @@ def prepare_sandbox(a: RepoAnalysis) -> str:
         shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(a.path, dest, ignore=shutil.ignore_patterns(
         ".git", "__pycache__", "node_modules", ".venv", "venv", ".ipynb_checkpoints"))
-    dockerfile, _ = make_dockerfile(a)
-    with open(os.path.join(dest, "Dockerfile"), "w", encoding="utf-8") as fh:
-        fh.write(dockerfile)
+    if not _has_native_dockerfile(dest):
+        dockerfile, _ = make_dockerfile(a)
+        with open(os.path.join(dest, "Dockerfile"), "w", encoding="utf-8") as fh:
+            fh.write(dockerfile)
     return dest
 
 
+def _has_native_dockerfile(dest: str) -> bool:
+    return any(f.lower().startswith("dockerfile") for f in os.listdir(dest))
+
+
+TYPE_BASE = {
+    "node": NODE_IMAGE,
+    "rust": "rust:1-slim",
+    "java-maven": "maven:3.9-slim",
+    "java-gradle": "gradle:8-slim",
+    "cmake/make": "gcc:13",
+    "ruby": "ruby:3.3-slim",
+}
+
+
 def choose_base(a: RepoAnalysis) -> str:
-    """Выбирает базовый образ по типу проекта и указанной версии Python."""
-    if a.project_type == "node":
-        return NODE_IMAGE
-    import re as _re
-    m = _re.match(r"(\d+\.\d+)", a.python_version or "")
+    """Выбирает базовый образ по типу проекта и указанным версиям."""
+    base = TYPE_BASE.get(a.project_type)
+    if base:
+        return base
+    if a.project_type == "go":
+        _, go_ver = _parse_go_mod(a.path)
+        return f"golang:{go_ver}-slim" if go_ver else "golang:1.23-slim"
+    m = re.match(r"(\d+\.\d+)", a.python_version or "")
     if m:
         return f"python:{m.group(1)}-slim"
     return PYTHON_IMAGE

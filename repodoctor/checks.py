@@ -59,7 +59,8 @@ OLD_PINS = [
 
 GPU_HINTS = re.compile(r"\b(cudnn|gpu|cuda|nvidia)\b", re.IGNORECASE)
 API_KEY_HINTS = re.compile(
-    r"(openai_api_key|OPENAI_API_KEY|api_key|API[_-]?KEY|access[_-]?token|GITHUB_TOKEN|huggingface_token|HF_TOKEN)"
+    r"(?i)(openai_api_key|hf_token|huggingface_token|github_token|access[_-]?token\s*[:=]"
+    r"|api[_-]?key\s*[:=]|anthropic_api_key|mistral_api_key)"
 )
 DATA_EXT_RE = re.compile(r"\.(csv|tsv|h5|hdf5|pt|pth|pkl|npy|npz|jsonl|lmdb|h5py|parquet|gz|zip|tar)$", re.IGNORECASE)
 
@@ -67,12 +68,16 @@ DATA_EXT_RE = re.compile(r"\.(csv|tsv|h5|hdf5|pt|pth|pkl|npy|npz|jsonl|lmdb|h5py
 def run_checks(a: RepoAnalysis) -> ChecksReport:
     report = ChecksReport()
 
-    if not a.has_requirements and not a.has_conda_env and not a.has_pyproject and not a.has_setup_py:
+    has_dep_file = (a.has_requirements or a.has_conda_env or a.has_pyproject or a.has_setup_py
+                    or a.has_cargo or a.has_go_mod or a.has_package_json
+                    or a.has_pom or a.has_gradle or a.has_gemfile or a.has_makefile)
+    if not has_dep_file:
         report.findings.append(
             Finding(
                 "critical",
                 "Нет файла зависимостей",
-                "В репозитории нет requirements.txt / environment.yml / pyproject.toml / setup.py.",
+                "В репозитории нет requirements.txt / environment.yml / pyproject.toml / setup.py / "
+                "package.json / Cargo.toml / go.mod / pom.xml.",
                 "Попробуйте: pip install pipreqs и сгенерировать зависимости по импортам, "
                 "или посмотрите, какие библиотеки импортируются в главном скрипте.",
             )
@@ -207,7 +212,7 @@ def _fragment_exists(repo_root: str, fragment: str) -> bool:
 def _scan_for_env_keys(a: RepoAnalysis) -> list[str]:
     hits = []
     for dirpath, dirnames, filenames in os.walk(a.path):
-        dirnames[:] = [d for d in dirnames if d not in {".git", "node_modules", "__pycache__"}]
+        dirnames[:] = [d for d in dirnames if d not in {".git", "node_modules", "__pycache__", ".github"}]
         for fn in filenames:
             if not fn.endswith((".py", ".md", ".sh", ".yml", ".yaml", ".json")):
                 continue

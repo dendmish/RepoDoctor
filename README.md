@@ -40,10 +40,10 @@ Hackathon · Тема №4 · Open Source × AI
 | Возможность | Инструмент | Что на выходе |
 |---|---|---|
 | Клонирование репо | git + GitHub tarball fallback (кэш клонов) | локальная копия |
-| Статический анализ | парсинг `requirements.txt` / `environment.yml` / `pyproject.toml` / `setup.py` / `package.json` | зависимости, версия Python, точки входа |
+| Статический анализ | парсинг `requirements.txt` / `environment.yml` / `pyproject.toml` / `setup.py` / `package.json` / `Cargo.toml` / `go.mod` / `pom.xml` / CMake / Makefile | зависимости, верс. Python/Go, точки входа |
 | Детектор проблем | правила, без LLM | 🔴 критичные / 🟡 предупр. / 🔵 инфо |
 | Пошаговая инструкция | Ollama (LLM, локально) | шаги + комментарии к рискам |
-| Пробный запуск | Docker: `build` + `run` с лимитами CPU/RAM, таймаутом, `--rm` | реальный лог запуска |
+| Пробный запуск | Docker + шаблоны Dockerfile по экосистеме: **Python, Node.js, Rust (cargo), Go, Java (Maven/Gradle), C/C++ (CMake/Make), Ruby**; свой Dockerfile репо используется как есть | реальный лог запуска |
 | Диагностика ошибки | LLM + контекст проекта | категория, корневая причина, команды фикс |
 
 ## 🚀 Быстрый старт
@@ -136,16 +136,25 @@ docker compose up -d     # http://localhost:8501
 - статический анализ: нет `requirements.txt`; в коде пути к данным
   `./data/rt-polaritydata/rt-polarity.pos/.neg`, файлов в репо нет;
 - docker-запуск упал с реальной ошибкой:
-
 ```
 Traceback (most recent call last):
   File "/app/train.py", line 3, in <module>
     import tensorflow as tf
 ModuleNotFoundError: No module named 'tensorflow'
 ```
-
 - диагноз агента: категория `missing_package`, корневая строка лога,
   команда исправления `pip install tensorflow==...` + следующий шаг.
+
+<details>
+<summary><b>✅ Проверялось и на не-Python</b></summary>
+
+- `itchyny/gojq` (Go): распознан тип `go`, зависимости из `go.mod` (go 1.24),
+  ложные находки отфильтрованы (`GITHUB_TOKEN` в CI-файле — не проблема пользователя);
+  docker-run собрал проект через `go mod download` + `go build` и запустил (exit 0);
+- Rust / Java / CMake / Ruby — шаблоны Dockerfile и выбор CMD покрыты синтетическими
+  тестами (базовые образы: `rust:1-slim`, `maven:3.9-slim`, `gradle:8-slim`, `gcc:13`, `ruby:3.3-slim`).
+
+</details>
 
 </details>
 

@@ -31,6 +31,12 @@ class RepoAnalysis:
     has_setup_py: bool = False
     has_package_json: bool = False
     has_makefile: bool = False
+    has_cargo: bool = False
+    has_go_mod: bool = False
+    has_cmake: bool = False
+    has_pom: bool = False
+    has_gradle: bool = False
+    has_gemfile: bool = False
     file_count: int = 0
 
 
@@ -183,6 +189,40 @@ def _parse_package_json(root: str) -> list[str]:
     return list(deps)
 
 
+def _parse_cargo_toml(root: str) -> tuple[list[str], str]:
+    path = os.path.join(root, "Cargo.toml")
+    if not os.path.isfile(path):
+        return [], ""
+    try:
+        import tomllib
+        data = tomllib.loads(safe_read(path))
+    except (ValueError, OSError, ModuleNotFoundError):
+        return [], ""
+    deps = []
+    for key in ("dependencies", "dev-dependencies"):
+        for name in (data.get(key) or {}):
+            deps.append(name)
+    has_bin = bool(data.get("bin") or (data.get("package", {}).get("name")))
+    return deps, (data.get("package", {}).get("name") or "") if has_bin else ""
+
+
+def _parse_go_mod(root: str) -> tuple[list[str], str]:
+    path = os.path.join(root, "go.mod")
+    if not os.path.isfile(path):
+        return [], ""
+    text = safe_read(path)
+    go_ver = ""
+    m = re.search(r"^go\s+(\d+(?:\.\d+)?)", text, re.MULTILINE)
+    if m:
+        go_ver = m.group(1)
+    deps = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line and not line.startswith("//") and "/" in line and not line.startswith(("module", "go ", "require", "exclude", "replace")):
+            deps.append(line.split()[0])
+    return deps[:20], go_ver
+
+
 def _extract_python_version(root: str, readme: str) -> str:
     path = os.path.join(root, ".python-version")
     if os.path.isfile(path):
@@ -222,10 +262,16 @@ def _scan_code_fragments(root: str, max_files: int = 400) -> tuple[list[str], li
     return data_frags[:40], hard_paths[:40]
 
 
+LAUNCH_PREFIXES = (
+    "python ", "python3 ", "pip ", "./", "cargo run", "cargo build",
+    "go run", "go build", "make", "mvn ", "gradle ", "cmake ", "npm ",
+    "ruby ", "bash ", "sh ",
+)
+
+
 def _entry_points_from_readme(readme: str, path: str) -> list[EntryCmd]:
     hits = []
     for m in RUN_CMD_RE.finditer(readme):
-        lang = m.group(1)
         block = m.group(2)
         for line in block.splitlines():
             line = line.strip()
@@ -233,15 +279,14 @@ def _entry_points_from_readme(readme: str, path: str) -> list[EntryCmd]:
                 continue
             if line.startswith("$"):
                 line = line.lstrip("$ ").strip()
-            cwd = os.path.basename(path)
             if line.startswith("cd ") or line.startswith("git") or len(line) > 160:
                 continue
-            if lang == "python":
-                if line.startswith("python ") and " " not in line[7:]:
-                    hits.append({"cmd": line, "source": "README (python)"})
+            if not line.startswith(LAUNCH_PREFIXES):
                 continue
-            if line.startswith("python ") or line.startswith("pip ") or line.startswith("./"):
-                hits.append({"cmd": line, "source": "README"})
+            source = "README"
+            if line.startswith(("cargo ", "go ", "make", "mvn ", "gradle ", "cmake ")):
+                source = "README (%s)" % line.split()[0]
+            hits.append({"cmd": line, "source": source})
     return hits[:15]
 
 
@@ -280,6 +325,13 @@ def analyze_repo(path: str) -> RepoAnalysis:
     analysis.has_dockerfile = any(f.lower().startswith("dockerfile") for f in files)
     analysis.has_package_json = "package.json" in top_level
     analysis.has_makefile = "Makefile" in top_level
+    analysis.has_cargo = "Cargo.toml" in top_level
+    analysis.has_go_mod = "go.mod" in top_level
+    analysis.has_cmake = any(x in files for x in ["CMakeLists.txt", "CMakeLists"])
+    analysis.has_pom = "pom.xml" in top_level
+    analysis.has_gradle = any(x in top_level for x in ["build.gradle", "build.gradle.kts"]) \
+        or any(f.startswith("gradlew") for f in top_level)
+    analysis.has_gemfile = "Gemfile" in top_level
 
     deps = []
     if analysis.has_requirements:
@@ -293,6 +345,14 @@ def analyze_repo(path: str) -> RepoAnalysis:
         deps.extend(_parse_setup_py(root))
     if analysis.has_package_json:
         deps.extend(_parse_package_json(root))
+    if analysis.has_cargo:
+        cdeps, _ = _parse_cargo_toml(root)
+        deps.extend(cdeps)
+    if analysis.has_go_mod:
+        gdeps, go_ver = _parse_go_mod(root)
+        if go_ver:
+            deps.append("go " + go_ver)
+        deps.extend(gdeps)
     analysis.dependencies = list(dict.fromkeys(deps))[:80]
 
     analysis.python_version = _extract_python_version(root, readme)
@@ -303,6 +363,18 @@ def analyze_repo(path: str) -> RepoAnalysis:
         analysis.project_type = "conda"
     elif analysis.has_pyproject or analysis.has_setup_py:
         analysis.project_type = "python (pyproject/setup)"
+    elif analysis.has_cargo:
+        analysis.project_type = "rust"
+    elif analysis.has_go_mod:
+        analysis.project_type = "go"
+    elif analysis.has_pom:
+        analysis.project_type = "java-maven"
+    elif analysis.has_gradle:
+        analysis.project_type = "java-gradle"
+    elif analysis.has_cmake or analysis.has_makefile:
+        analysis.project_type = "cmake/make"
+    elif analysis.has_gemfile:
+        analysis.project_type = "ruby"
     elif analysis.has_package_json:
         analysis.project_type = "node"
     elif analysis.has_dockerfile:
