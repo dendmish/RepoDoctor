@@ -41,7 +41,8 @@ _PREFIXED_PATTERNS: tuple[re.Pattern[str], ...] = (
     # NAME_WITH_SECRET=value, "token": "value", password=value in query strings
     re.compile(
         r"(?i)(\b[A-Za-z0-9_.-]*(?:secret|token|passw(?:or)?d|pwd|api[_-]?key|access[_-]?key"
-        r"|private[_-]?key|credentials?)[A-Za-z0-9_.-]*[\"']?\s*[=:]\s*[\"']?)"
+        r"|auth(?:orization)?[_-]?key|private[_-]?key|credentials?)"
+        r"[A-Za-z0-9_.-]*[\"']?\s*[=:]\s*[\"']?)"
         r"(?!\[REDACTED)[^\s\"'&,;]+"
     ),
 )

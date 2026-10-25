@@ -78,6 +78,8 @@ class ProviderError(Exception):
             "rate_limited",
             "ai_not_configured",
             "context_too_large",
+            "authentication_failed",
+            "tls_error",
         }
         self.reason = reason if reason in allowed else "provider_unavailable"
         super().__init__(self.reason)
@@ -101,6 +103,26 @@ class IntelligenceProvider(PlanProvider, DiagnosisProvider, Protocol):
     model: str | None
 
 
+def plan_payload(scan: StaticAnalysis, target: TargetEnvironment) -> dict:
+    baseline = build_fallback_plan(scan, target)
+    return build_context(scan, target, baseline=baseline.model_dump(mode="json"))
+
+
+def diagnosis_payload(context: AnalysisContext, log: SanitizedLog, command: str | None) -> dict:
+    from repodoctor.intelligence.diagnostics import diagnostic_commands, prepare_log
+
+    return {
+        "repo_context": build_context(
+            context.scan,
+            context.response.target,
+            baseline=context.response.run_plan.model_dump(mode="json"),
+        ),
+        "command": command,
+        "log": prepare_log(log).payload,
+        "allowed_commands": diagnostic_commands(context),
+    }
+
+
 class OpenAIProvider:
     """Settings-only credentials. No client until an enabled operation actually calls us.
 
@@ -114,7 +136,7 @@ class OpenAIProvider:
 
     async def _request(self, prompt: str, payload: dict, schema: type[OutputT]) -> OutputT:
         settings = self._settings
-        if not settings.ai_configured:
+        if not settings.openai_configured:
             raise ProviderError("ai_not_configured")
         try:
             async with asyncio.timeout(settings.ai_timeout_seconds):
@@ -163,29 +185,15 @@ class OpenAIProvider:
     async def generate_plan(
         self, scan: StaticAnalysis, target: TargetEnvironment
     ) -> ModelPlanOutput:
-        if not self._settings.ai_configured:
+        if not self._settings.openai_configured:
             raise ProviderError("ai_not_configured")
-        baseline = build_fallback_plan(scan, target)
-        payload = build_context(scan, target, baseline=baseline.model_dump(mode="json"))
-        return await self._request("analysis.txt", payload, ModelPlanOutput)
+        return await self._request("analysis.txt", plan_payload(scan, target), ModelPlanOutput)
 
     async def generate_diagnosis(
         self, context: AnalysisContext, log: SanitizedLog, command: str | None
     ) -> ModelDiagnosisOutput:
-        if not self._settings.ai_configured:
+        if not self._settings.openai_configured:
             raise ProviderError("ai_not_configured")
-        # Imported here to keep the pure diagnostic rules independent of provider schemas.
-        from repodoctor.intelligence.diagnostics import diagnostic_commands, prepare_log
-
-        prepared = prepare_log(log)
-        payload = {
-            "repo_context": build_context(
-                context.scan,
-                context.response.target,
-                baseline=context.response.run_plan.model_dump(mode="json"),
-            ),
-            "command": command,
-            "log": prepared.payload,
-            "allowed_commands": diagnostic_commands(context),
-        }
-        return await self._request("diagnosis.txt", payload, ModelDiagnosisOutput)
+        return await self._request(
+            "diagnosis.txt", diagnosis_payload(context, log, command), ModelDiagnosisOutput
+        )

@@ -32,6 +32,7 @@ def model_plan(scan):
 def settings(**kwargs):
     return Settings(
         _env_file=None,
+        ai_provider="openai",
         openai_api_key="synthetic-test-key",
         openai_model="configured-model",
         **kwargs,

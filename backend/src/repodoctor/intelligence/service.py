@@ -71,7 +71,9 @@ class IntelligenceServiceImpl:
                     run_plan=output.run_plan,
                     additional_findings=findings,
                     evidence=scan.evidence.copy(),
-                    generation=self._generation(ANALYSIS_PROMPT_VERSION),
+                    generation=self._generation(
+                        getattr(self.provider, "plan_prompt_version", ANALYSIS_PROMPT_VERSION)
+                    ),
                     warnings=warnings,
                 )
             except ProviderError as exc:
@@ -130,7 +132,9 @@ class IntelligenceServiceImpl:
                     causes=model_causes(output),
                     questions=output.questions,
                     evidence=evidence,
-                    generation=self._generation(DIAGNOSIS_PROMPT_VERSION),
+                    generation=self._generation(
+                        getattr(self.provider, "diagnosis_prompt_version", DIAGNOSIS_PROMPT_VERSION)
+                    ),
                     warnings=warnings,
                 )
             except ProviderError as exc:

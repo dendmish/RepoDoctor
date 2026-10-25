@@ -18,13 +18,14 @@ from repodoctor import __version__
 from repodoctor.api.dependencies import AnalysisHandler, DiagnosisHandler
 from repodoctor.api.errors import install_error_handlers
 from repodoctor.api.routes import router
-from repodoctor.config import PROJECT_ROOT, AppEnv, Settings, get_settings
+from repodoctor.config import PROJECT_ROOT, AIProvider, AppEnv, Settings, get_settings
 from repodoctor.contracts.ports import (
     AnalysisStore,
     IntelligenceService,
     RepositorySource,
     StaticAnalyzer,
 )
+from repodoctor.intelligence.gigachat import GigaChatProvider
 from repodoctor.intelligence.provider import OpenAIProvider
 from repodoctor.intelligence.service import IntelligenceServiceImpl
 from repodoctor.repository.source import create_repository_source
@@ -94,7 +95,13 @@ def create_app(
         if analyzer is None:
             analyzer = RepositoryAnalyzer()
         if intelligence is None:
-            provider = OpenAIProvider(settings) if settings.ai_configured else None
+            provider = None
+            if settings.ai_configured:
+                provider = (
+                    GigaChatProvider(settings)
+                    if settings.ai_provider == AIProvider.gigachat
+                    else OpenAIProvider(settings)
+                )
             intelligence = IntelligenceServiceImpl(provider)
         if source is None and analysis_service is None and settings.repository_mode == "fixture":
             source = create_repository_source(settings)

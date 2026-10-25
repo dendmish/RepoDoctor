@@ -28,6 +28,17 @@ class AppEnv(StrEnum):
     production = "production"
 
 
+class AIProvider(StrEnum):
+    gigachat = "gigachat"
+    openai = "openai"
+
+
+class GigaChatScope(StrEnum):
+    personal = "GIGACHAT_API_PERS"
+    business = "GIGACHAT_API_B2B"
+    corporate = "GIGACHAT_API_CORP"
+
+
 PositiveSeconds = Annotated[float, Field(gt=0)]
 PositiveCount = Annotated[int, Field(gt=0)]
 
@@ -44,6 +55,11 @@ class Settings(BaseSettings):
     repository_mode: RepositoryMode = RepositoryMode.fixture
     github_token: SecretStr | None = None
     github_api_version: str = "2026-03-10"
+    ai_provider: AIProvider = AIProvider.gigachat
+    gigachat_auth_key: SecretStr | None = None
+    gigachat_model: str | None = None
+    gigachat_scope: GigaChatScope = GigaChatScope.personal
+    gigachat_ca_bundle: Path | None = None
     openai_api_key: SecretStr | None = None
     openai_model: str | None = None
     ai_timeout_seconds: PositiveSeconds = 40
@@ -57,20 +73,28 @@ class Settings(BaseSettings):
     # Dev-only synthetic responses from services/stubs.py. Forbidden in production.
     use_dev_stubs: bool = False
 
-    @field_validator("github_token", "openai_api_key", mode="before")
+    @field_validator("github_token", "openai_api_key", "gigachat_auth_key", mode="before")
     @classmethod
     def _blank_secret_is_none(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
             return None
         return value
 
-    @field_validator("openai_model", mode="before")
+    @field_validator("openai_model", "gigachat_model", mode="before")
     @classmethod
     def _blank_model_is_none(cls, value: object) -> object:
         if isinstance(value, str):
             value = value.strip()
             return value or None
         return value
+
+    @field_validator("gigachat_ca_bundle", mode="before")
+    @classmethod
+    def _ca_bundle_path(cls, value: object) -> Path | None:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        path = Path(value)
+        return path if path.is_absolute() else PROJECT_ROOT / path
 
     @model_validator(mode="after")
     def _no_stubs_in_production(self) -> Settings:
@@ -80,7 +104,17 @@ class Settings(BaseSettings):
 
     @property
     def ai_configured(self) -> bool:
-        """OpenAI is usable only when both key and model are configured."""
+        """Credentials for the selected provider only; never silently switch vendors."""
+        if self.ai_provider is AIProvider.gigachat:
+            return self.gigachat_configured
+        return self.openai_configured
+
+    @property
+    def gigachat_configured(self) -> bool:
+        return self.gigachat_auth_key is not None and self.gigachat_model is not None
+
+    @property
+    def openai_configured(self) -> bool:
         return self.openai_api_key is not None and self.openai_model is not None
 
 

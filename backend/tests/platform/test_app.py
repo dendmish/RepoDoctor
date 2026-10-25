@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from repodoctor.config import Settings
+from repodoctor.config import AIProvider, Settings
 from repodoctor.contracts.api import AnalysisResponse, DiagnosisResponse, ErrorResponse
 from repodoctor.contracts.domain import GitHubRateLimitedError
 from repodoctor.export_openapi import render_openapi
@@ -45,7 +45,11 @@ def test_health_without_keys(client: TestClient) -> None:
 
 def test_health_never_exposes_keys(test_settings: Settings) -> None:
     settings = test_settings.model_copy(
-        update={"openai_api_key": SecretStr("sk-test-SECRET123"), "openai_model": "m"}
+        update={
+            "ai_provider": AIProvider.openai,
+            "openai_api_key": SecretStr("sk-test-SECRET123"),
+            "openai_model": "m",
+        }
     )
     response = TestClient(create_app(settings)).get("/api/v1/health")
     assert response.json()["ai_configured"] is True

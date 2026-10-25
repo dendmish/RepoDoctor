@@ -184,7 +184,9 @@ def test_incomplete_ai_config_does_not_construct_provider(monkeypatch, key, mode
         raise AssertionError("Incomplete credentials must not construct provider")
 
     monkeypatch.setattr("repodoctor.main.OpenAIProvider", forbidden)
-    settings = Settings(_env_file=None, app_env="test", openai_api_key=key, openai_model=model)
+    settings = Settings(
+        _env_file=None, app_env="test", ai_provider="openai", openai_api_key=key, openai_model=model
+    )
     with TestClient(create_app(settings)) as client:
         result = client.post("/api/v1/analyses", json=request_for(use_ai=True))
         assert result.status_code == 201
@@ -225,6 +227,7 @@ def test_configured_provider_and_both_http_ai_operations(monkeypatch):
     settings = Settings(
         _env_file=None,
         app_env="production",
+        ai_provider="openai",
         openai_api_key="synthetic-test-key",
         openai_model="configured-model",
     )

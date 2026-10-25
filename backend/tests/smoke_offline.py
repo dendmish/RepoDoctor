@@ -28,6 +28,8 @@ def main() -> None:
         USE_DEV_STUBS="false",
         OPENAI_API_KEY="",
         OPENAI_MODEL="",
+        GIGACHAT_AUTH_KEY="",
+        GIGACHAT_MODEL="",
         GITHUB_TOKEN="",
         STORE_TTL_SECONDS="1",
     )
